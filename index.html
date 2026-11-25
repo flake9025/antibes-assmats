@@ -13,6 +13,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
   <style>.time-fields{display:flex;gap:8px}.time-fields label{flex:1;min-width:0;font-size:11px;color:#6b7f70}.time-fields input{margin-top:5px}.address a{text-decoration:underline;text-underline-offset:3px}.sector-options{display:grid;gap:9px}.sector-options label{display:flex;align-items:center;gap:8px;color:#52675b;font-size:12px}.sector-options input{accent-color:#234c42}.results-heading{gap:16px}.sort-control{min-width:180px}.sort-control label{display:block;color:#6b7f70;font-size:11px;font-weight:700;margin-bottom:6px}.sort-control select{width:100%;border:1px solid #dfe4da;border-radius:5px;background:#fff;color:#344b43;padding:9px;font-size:12px}.conditions-list{list-style:none;padding:0;margin:10px 0;display:grid;gap:7px}.conditions-list li{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;font-size:12px;line-height:1.5;color:#5e7165}.conditions-list strong{font-size:11px;color:#34584a}.conditions-list span{overflow-wrap:anywhere}@media(max-width:560px){.results-heading{flex-wrap:wrap}.sort-control{width:100%}}</style>
+  <style>.status-options{display:grid;gap:9px}.status-options label{display:flex;align-items:center;gap:8px;color:#52675b;font-size:12px}.status-options input{accent-color:#234c42}#location-form>p:not(.hint),#saved-address{font-size:11px;line-height:1.5;color:#6b7f70;margin:8px 0 12px;overflow-wrap:anywhere}</style>
   <title>AssMat Antibes Facile · Trouver une assistante maternelle</title>
 </head>
 <body>
@@ -34,12 +35,19 @@
         <div class="filter-heading"><div><p class="eyebrow">VOTRE RECHERCHE</p><h2>Les critères</h2></div><button id="reset" class="text-button" type="button">Effacer</button></div>
         <div class="distance-box">
           <div class="distance-title">⌁ <strong>Autour de vous</strong></div>
-          <p>Estimez la distance à vol d'oiseau depuis votre adresse.</p>
-          <label class="sr-only" for="origin">Votre adresse</label>
-          <input id="origin" placeholder="Votre adresse à Antibes" autocomplete="street-address">
-          <button type="button" id="use-location" class="secondary-button">⌖ Utiliser ma position</button>
-          <button type="button" id="locate" class="secondary-button">Calculer les distances →</button>
-          <p class="hint">Adresse et distances mémorisées sur cet appareil. Avec votre accord, votre position est envoyée au service public IGN pour proposer une adresse approximative. Lors du calcul, votre adresse et celles de la liste lui sont envoyées. Les distances restent approximatives.</p>
+          <div id="location-form">
+            <p>Estimez la distance à vol d'oiseau depuis votre adresse.</p>
+            <label class="sr-only" for="origin">Votre adresse</label>
+            <input id="origin" placeholder="Votre adresse à Antibes" autocomplete="street-address">
+            <button type="button" id="use-location" class="secondary-button">⌖ Utiliser ma position</button>
+            <button type="button" id="locate" class="secondary-button">Calculer les distances →</button>
+            <p class="hint">Adresse et distances mémorisées sur cet appareil. Avec votre accord, votre position est envoyée au service public IGN pour proposer une adresse approximative et calculer les distances. Lors du calcul, votre adresse et celles de la liste lui sont envoyées. Les distances restent approximatives.</p>
+          </div>
+          <div id="location-summary" hidden>
+            <p id="saved-address"></p>
+            <p id="location-approximate" class="hint" hidden>Adresse approximative : vérifiez-la.</p>
+            <button type="button" id="reset-location" class="secondary-button">Réinitialiser ma position</button>
+          </div>
           <p id="geo-message" class="geo-message" role="status"></p>
         </div>
         <label for="query">Nom</label>
@@ -65,8 +73,14 @@
           <label><input type="checkbox" value="Antibes Cœurs de ville et Cap"> Cœurs de ville et Cap</label>
         </div></fieldset>
         <p class="hint">Aucun secteur sélectionné : tous les secteurs sont affichés.</p>
-        <label for="status-filter">Suivi des contacts</label>
-        <select id="status-filter"><option value="">Tous les contacts</option><option value="none">À contacter</option><option value="ok">OK de principe</option><option value="ko">KO de principe</option><option value="no-answer">Pas de réponse</option><option value="meeting">RDV prévu</option></select>
+        <fieldset><legend>Suivi des contacts</legend><div class="status-options">
+          <label><input type="checkbox" value="none" checked> À contacter</label>
+          <label><input type="checkbox" value="ok" checked> OK de principe</label>
+          <label><input type="checkbox" value="ko"> KO de principe</label>
+          <label><input type="checkbox" value="no-answer" checked> Pas de réponse</label>
+          <label><input type="checkbox" value="meeting" checked> RDV prévu</label>
+        </div></fieldset>
+        <p class="hint">Les contacts KO sont masqués par défaut.</p>
       </aside>
       <section class="results" aria-labelledby="results-title">
         <div class="results-heading"><div><p class="eyebrow">DES CONTACTS PRÈS DE VOUS</p><h2 id="results-title">Les assistantes maternelles</h2><p id="count" aria-live="polite"></p></div><div class="sort-control"><label for="sort">Trier par</label><select id="sort"><option value="original">Ordre de la liste</option><option value="name">Nom (A → Z)</option><option value="places">Nombre de places (décroissant)</option><option value="address">Adresse (A → Z)</option><option value="distance">Distance (plus proche)</option><option value="updated">Date de mise à jour (récente)</option><option value="status">Suivi (A → Z)</option></select><p id="sort-hint" class="hint" role="status"></p></div></div>

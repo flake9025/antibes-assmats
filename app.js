@@ -16,12 +16,13 @@ let geoRun = 0;
 let locationRun = 0;
 let locationEdited = false;
 let locationStorageAvailable = true;
+let locationApproximate = savedLocation.approximate === true;
 const escape = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 function saveLocation() {
   try {
     localStorage.setItem(locationKey, JSON.stringify({
-      address: $('#origin').value, revision: sourceRevision, distances: Object.fromEntries(distances)
+      address: $('#origin').value, revision: sourceRevision, distances: Object.fromEntries(distances), approximate: locationApproximate
     }));
     locationStorageAvailable = true;
   } catch {
@@ -33,10 +34,19 @@ function locationMessage(message) {
   $('#geo-message').textContent = message + (locationStorageAvailable ? '' : " Impossible de mémoriser l'adresse et les distances sur cet appareil.");
 }
 
+function showLocationSummary() {
+  $('#saved-address').textContent = $('#origin').value;
+  $('#location-approximate').hidden = !locationApproximate;
+  $('#location-form').hidden = true;
+  $('#location-summary').hidden = false;
+  locationMessage('');
+}
+
 function render() {
   const query = normalize($('#query').value.trim());
   const selected = [...document.querySelectorAll('.days input:checked')].map(input => input.value);
   const sectors = [...document.querySelectorAll('.sector-options input:checked')].map(input => input.value);
+  const statuses = [...document.querySelectorAll('.status-options input:checked')].map(input => input.value);
   const start = $('#time-start').value, end = $('#time-end').value;
   const invalidTime = start && end && start >= end;
   $('#time-message').textContent = invalidTime ? "L'heure de fin doit être après l'heure de début." : "Les horaires indiquent l'amplitude possible, à confirmer.";
@@ -44,7 +54,7 @@ function render() {
     .filter(offer => offer.places >= Number($('#places').value))
     .filter(offer => !query || normalize(offer.name).includes(query))
     .filter(offer => !sectors.length || sectors.includes(offer.sector))
-    .filter(offer => !$('#status-filter').value || (saved[offer.id]?.status || 'none') === $('#status-filter').value)
+    .filter(offer => statuses.includes(saved[offer.id]?.status || 'none'))
     .filter(offer => dateMatch(offer.availability, $('#start').value, sourceYear) && offer.dayMatch !== 'no' && offer.timeMatch !== 'no');
   sortOffers(filtered, $('#sort').value, distances, saved);
   $('#sort-hint').textContent = $('#sort').value === 'distance' && !distances.size
@@ -70,16 +80,16 @@ function render() {
   }).join('');
 }
 
-for (const selector of ['#query', '#places', '#start', '#time-start', '#time-end', '#status-filter', '#sort', '.days', '.sector-options']) {
+for (const selector of ['#query', '#places', '#start', '#time-start', '#time-end', '#sort', '.days', '.sector-options', '.status-options']) {
   $(selector).addEventListener('input', render);
   $(selector).addEventListener('change', render);
 }
 $('#reset').addEventListener('click', () => {
   $('#query').value = ''; $('#places').value = '1'; $('#start').value = '';
   $('#time-start').value = ''; $('#time-end').value = '';
-  $('#status-filter').value = '';
   $('#sort').value = 'original';
   document.querySelectorAll('.days input, .sector-options input').forEach(input => { input.checked = false; });
+  document.querySelectorAll('.status-options input').forEach(input => { input.checked = input.defaultChecked; });
   render();
 });
 $('#cards').addEventListener('change', event => {
@@ -108,6 +118,7 @@ $('#origin').addEventListener('input', () => {
   geoRun++;
   locationRun++;
   locationEdited = true;
+  locationApproximate = false;
   distances = new Map();
   $('#locate').disabled = false;
   $('#use-location').disabled = false;
@@ -121,6 +132,7 @@ $('#use-location').addEventListener('click', async () => {
     $('#geo-message').textContent = "La géolocalisation n'est pas disponible. Saisissez votre adresse.";
     return;
   }
+  geoRun++;
   const run = ++locationRun;
   $('#use-location').disabled = true;
   $('#geo-message').textContent = 'Recherche de votre position…';
@@ -138,7 +150,8 @@ $('#use-location').addEventListener('click', async () => {
     if (run !== locationRun) return;
     $('#origin').value = feature.properties.label;
     $('#origin').dispatchEvent(new Event('input', { bubbles: true }));
-    locationMessage("Adresse approximative : vérifiez-la avant de calculer les distances.");
+    locationApproximate = true;
+    $('#locate').click();
   } catch (error) {
     if (run !== locationRun) return;
     $('#geo-message').textContent = error.code === 1
@@ -152,6 +165,7 @@ $('#use-location').addEventListener('click', async () => {
 $('#locate').addEventListener('click', async () => {
   const address = $('#origin').value.trim();
   if (!address) { $('#geo-message').textContent = "Saisissez d'abord votre adresse."; return; }
+  if (!offers.length) { $('#geo-message').textContent = "La liste n'est pas encore disponible. Réessayez."; return; }
   locationRun++;
   $('#use-location').disabled = false;
   const run = ++geoRun;
@@ -168,7 +182,6 @@ $('#locate').addEventListener('click', async () => {
     const byAddress = [...new Set(offers.map(offer => offer.address))];
     const total = byAddress.length;
     let completed = 0;
-    let failures = 0;
     async function worker() {
       while (byAddress.length && run === geoRun) {
         const address = byAddress.shift();
@@ -178,8 +191,7 @@ $('#locate').addEventListener('click', async () => {
           if (result) for (const offer of offers.filter(item => item.address === address)) {
             distances.set(offer.id, { km: distanceKm(origin.coordinates, result.coordinates), label: result.label });
           }
-          else failures++;
-        } catch { failures++; }
+        } catch { /* Continue with the remaining addresses. */ }
         completed++;
         if (run !== geoRun) return;
         $('#geo-message').textContent = `Adresse reconnue : ${origin.label}. Calcul : ${completed}/${total}…`;
@@ -189,13 +201,37 @@ $('#locate').addEventListener('click', async () => {
     await Promise.all([worker(), worker()]);
     if (run === geoRun) {
       saveLocation();
-      locationMessage(`Depuis ${origin.label}. ${failures ? `${failures} adresse(s) non localisée(s). ` : ''}Vérifiez les adresses reconnues.`);
-      if ($('#sort').value === 'original' && distances.size) $('#sort').value = 'distance';
+      if (distances.size) {
+        showLocationSummary();
+        if ($('#sort').value === 'original') $('#sort').value = 'distance';
+      } else {
+        locationMessage("Aucune adresse n'a pu être localisée. Vérifiez votre connexion et réessayez.");
+      }
       render();
     }
   } catch (error) {
     if (run === geoRun) $('#geo-message').textContent = error.message || 'Calcul impossible. Vérifiez votre connexion.';
   } finally { if (run === geoRun) $('#locate').disabled = false; }
+});
+
+$('#reset-location').addEventListener('click', () => {
+  geoRun++;
+  locationRun++;
+  locationEdited = true;
+  locationApproximate = false;
+  distances = new Map();
+  savedLocation = {};
+  $('#origin').value = '';
+  $('#location-form').hidden = false;
+  $('#location-summary').hidden = true;
+  $('#locate').disabled = false;
+  $('#use-location').disabled = false;
+  if ($('#sort').value === 'distance') $('#sort').value = 'original';
+  try { localStorage.removeItem(locationKey); locationStorageAvailable = true; }
+  catch { locationStorageAvailable = false; }
+  locationMessage('');
+  render();
+  $('#origin').focus();
 });
 
 try {
@@ -207,7 +243,10 @@ try {
   sourceYear = Number(source.pdfDate.slice(0, 4));
   if (!locationEdited && savedLocation.revision === sourceRevision && savedLocation.distances && typeof savedLocation.distances === 'object') {
     distances = new Map(Object.entries(savedLocation.distances).filter(([, value]) => Number.isFinite(value?.km) && typeof value.label === 'string'));
-    if (distances.size) $('#sort').value = 'distance';
+    if (distances.size) {
+      $('#sort').value = 'distance';
+      showLocationSummary();
+    }
   } else if (!locationEdited && savedLocation.revision && savedLocation.revision !== sourceRevision) {
     saveLocation();
     locationMessage('La liste a changé : recalculez les distances.');
