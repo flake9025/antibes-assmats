@@ -4,6 +4,7 @@ import { excelData, exportRows, EXPORT_COLUMNS } from './export.js';
 const $ = selector => document.querySelector(selector);
 const storageKey = 'petits-liens-contacts-v1';
 const locationKey = 'petits-liens-location-v1';
+const filtersKey = 'petits-liens-filtres-v1';
 let saved = {};
 try { saved = JSON.parse(localStorage.getItem(storageKey) || '{}') || {}; } catch { /* Local storage may be unavailable. */ }
 let savedLocation = {};
@@ -20,7 +21,42 @@ let locationRun = 0;
 let locationEdited = false;
 let locationStorageAvailable = true;
 let locationApproximate = savedLocation.approximate === true;
+let savedFilters = {};
+try { savedFilters = JSON.parse(localStorage.getItem(filtersKey) || '{}') || {}; } catch { /* Local storage may be unavailable. */ }
 const escape = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+const filterInputs = {
+  query: '#query', places: '#places', start: '#start', timeStart: '#time-start', timeEnd: '#time-end', sort: '#sort'
+};
+const filterGroups = { days: '.days', sectors: '.sector-options', statuses: '.status-options' };
+
+function restoreFilters() {
+  for (const [key, selector] of Object.entries(filterInputs)) {
+    const input = $(selector);
+    if (typeof savedFilters[key] !== 'string') continue;
+    if (input.tagName === 'SELECT' && ![...input.options].some(option => option.value === savedFilters[key])) continue;
+    input.value = savedFilters[key];
+  }
+  for (const [key, selector] of Object.entries(filterGroups)) {
+    if (!Array.isArray(savedFilters[key])) continue;
+    document.querySelectorAll(`${selector} input`).forEach(input => { input.checked = savedFilters[key].includes(input.value); });
+  }
+}
+
+function saveFilters() {
+  savedFilters = Object.fromEntries(Object.entries(filterInputs).map(([key, selector]) => [key, $(selector).value]));
+  for (const [key, selector] of Object.entries(filterGroups)) {
+    savedFilters[key] = [...document.querySelectorAll(`${selector} input:checked`)].map(input => input.value);
+  }
+  try {
+    localStorage.setItem(filtersKey, JSON.stringify(savedFilters));
+    $('#filter-message').textContent = 'Vos critères sont mémorisés sur cet appareil.';
+  } catch {
+    $('#filter-message').textContent = 'Impossible de mémoriser vos critères sur cet appareil.';
+  }
+}
+
+restoreFilters();
 
 function saveLocation() {
   try {
@@ -86,8 +122,8 @@ function render() {
 }
 
 for (const selector of ['#query', '#places', '#start', '#time-start', '#time-end', '#sort', '.days', '.sector-options', '.status-options']) {
-  $(selector).addEventListener('input', render);
-  $(selector).addEventListener('change', render);
+  $(selector).addEventListener('input', () => { saveFilters(); render(); });
+  $(selector).addEventListener('change', () => { saveFilters(); render(); });
 }
 $('#reset').addEventListener('click', () => {
   $('#query').value = ''; $('#places').value = '1'; $('#start').value = '';
@@ -95,6 +131,7 @@ $('#reset').addEventListener('click', () => {
   $('#sort').value = 'original';
   document.querySelectorAll('.days input, .sector-options input').forEach(input => { input.checked = false; });
   document.querySelectorAll('.status-options input').forEach(input => { input.checked = input.defaultChecked; });
+  saveFilters();
   render();
 });
 $('#cards').addEventListener('change', event => {
@@ -235,7 +272,10 @@ $('#locate').addEventListener('click', async () => {
       saveLocation();
       if (distances.size) {
         showLocationSummary();
-        if ($('#sort').value === 'original') $('#sort').value = 'distance';
+        if ($('#sort').value === 'original') {
+          $('#sort').value = 'distance';
+          saveFilters();
+        }
       } else {
         locationMessage("Aucune adresse n'a pu être localisée. Vérifiez votre connexion et réessayez.");
       }
@@ -258,7 +298,10 @@ $('#reset-location').addEventListener('click', () => {
   $('#location-summary').hidden = true;
   $('#locate').disabled = false;
   $('#use-location').disabled = false;
-  if ($('#sort').value === 'distance') $('#sort').value = 'original';
+  if ($('#sort').value === 'distance') {
+    $('#sort').value = 'original';
+    saveFilters();
+  }
   try { localStorage.removeItem(locationKey); locationStorageAvailable = true; }
   catch { locationStorageAvailable = false; }
   locationMessage('');
@@ -277,7 +320,7 @@ try {
   if (!locationEdited && savedLocation.revision === sourceRevision && savedLocation.distances && typeof savedLocation.distances === 'object') {
     distances = new Map(Object.entries(savedLocation.distances).filter(([, value]) => Number.isFinite(value?.km) && typeof value.label === 'string'));
     if (distances.size) {
-      $('#sort').value = 'distance';
+      if (!savedFilters.sort) $('#sort').value = 'distance';
       showLocationSummary();
     }
   } else if (!locationEdited && savedLocation.revision && savedLocation.revision !== sourceRevision) {
