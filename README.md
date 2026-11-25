@@ -12,7 +12,7 @@ Vous cherchez un mode de garde pour votre enfant ? Cet outil indépendant transf
 2. Consultez les résultats, puis appelez directement en touchant un numéro de téléphone.
 3. Gardez une trace de vos échanges : « OK de principe », « KO de principe », « Pas de réponse » ou « RDV prévu », avec sa date.
 
-Vous pouvez aussi saisir votre adresse pour estimer la distance à vol d'oiseau et voir les résultats les plus proches.
+Touchez une adresse pour l'ouvrir dans Google Maps. Vous pouvez aussi saisir la vôtre pour estimer la distance à vol d'oiseau et voir les résultats les plus proches.
 
 **À savoir :** les disponibilités et les conditions peuvent changer. La date de la liste utilisée est affichée sur le site ; confirmez toujours les places, les jours, les horaires et les conditions directement auprès des professionnelles. La liste donne les disponibilités au mois, pas au jour. Les cas ambigus restent visibles avec la mention « à confirmer » ; les conditions peuvent aussi varier d'une place à l'autre.
 
