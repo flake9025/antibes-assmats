@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { readFile } from 'node:fs/promises';
-import { daysMatch, dateMatch, distanceKm, geocodeQuery, timeMatch } from '../lib.js';
+import { daysMatch, dateMatch, distanceKm, formatConditions, geocodeQuery, sortOffers, timeMatch } from '../lib.js';
 
 test('filtres de jours : exclusion certaine et cas ambigus', () => {
   assert.equal(daysMatch("Jours d'accueil : 4 jours sans mercredi Amplitude horaire : 8h", ['mercredi']), 'no');
@@ -52,4 +52,35 @@ test('extraction : les lignes fusionnées ne débordent pas sur les voisines', a
   assert.equal((dinis.details.match(/Jours d'accueil/g) || []).length, 1);
   assert.equal((sapanel.details.match(/Jours d'accueil/g) || []).length, 2);
   assert.match(sapanel.details, /marche acquise/);
+});
+
+test('présentation des conditions sans perdre les particularités', () => {
+  const text = "Recherche périscolaire uniquement Jours d'accueil : mercredi Amplitude horaire : 9h - 17h Age des enfant s : marche acquise Pour les dépannages : tout âge";
+  assert.deepEqual(formatConditions(text), [
+    { label: 'À noter', value: 'Recherche périscolaire uniquement' },
+    { label: 'Jours', value: 'mercredi' },
+    { label: 'Horaires', value: '9h - 17h' },
+    { label: 'Âge', value: 'marche acquise' },
+    { label: 'Dépannages', value: 'tout âge' }
+  ]);
+  assert.deepEqual(formatConditions('Information libre'), [{ label: 'À noter', value: 'Information libre' }]);
+  assert.equal(formatConditions("Jours d'accueil : 5 jours Jours d'accuei l : 4 jours").length, 2);
+});
+
+test('tri des offres, distances absentes et dates récentes', () => {
+  const offers = [
+    { id: 'a', name: 'Mme Zola', address: '10 rue A', places: 1, updated: '20/10/26' },
+    { id: 'b', name: 'Mme Émile', address: '2 rue A', places: 3, updated: '01/11/26' },
+    { id: 'c', name: 'Mme Alain', address: '1 rue A', places: 2, updated: '09/09/26' }
+  ];
+  const distances = new Map([['a', { km: 2 }], ['b', { km: 1 }]]);
+  const saved = { a: { status: 'meeting' }, b: { status: 'ko' } };
+  const sorted = by => sortOffers([...offers], by, distances, saved).map(offer => offer.id);
+  assert.deepEqual(sorted('original'), ['a', 'b', 'c']);
+  assert.deepEqual(sorted('name'), ['c', 'b', 'a']);
+  assert.deepEqual(sorted('places'), ['b', 'c', 'a']);
+  assert.deepEqual(sorted('address'), ['c', 'b', 'a']);
+  assert.deepEqual(sorted('distance'), ['b', 'a', 'c']);
+  assert.deepEqual(sorted('updated'), ['b', 'a', 'c']);
+  assert.deepEqual(sorted('status'), ['c', 'b', 'a']);
 });

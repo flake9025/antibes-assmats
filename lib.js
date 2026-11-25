@@ -1,7 +1,50 @@
 export const DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi'];
+export const STATUSES = { none: 'À contacter', ok: 'OK de principe', ko: 'KO de principe', 'no-answer': 'Pas de réponse', meeting: 'RDV prévu' };
 
 export function normalize(value) {
   return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+export function formatConditions(details) {
+  const pattern = /(?:Jours d['’]accuei\s*l|Amplitude horaire|[ÂA]ge de l['’]enfant|[ÂA]ge des enfant\s*s|Accueil en dehors des vacances scolaires|Accueil pour un périscolaire|Pour les dépannages)\s*:/gi;
+  const matches = [...details.matchAll(pattern)];
+  if (!matches.length) return [{ label: 'À noter', value: details }];
+  const sections = [];
+  const prefix = details.slice(0, matches[0].index).trim();
+  if (prefix) sections.push({ label: 'À noter', value: prefix });
+  for (let i = 0; i < matches.length; i++) {
+    const match = matches[i];
+    const raw = normalize(match[0]);
+    const label = raw.startsWith('jours') ? 'Jours' :
+      raw.startsWith('amplitude') ? 'Horaires' :
+      raw.startsWith('age') ? 'Âge' :
+      raw.startsWith('accueil en dehors') ? 'Vacances scolaires' :
+      raw.startsWith('accueil pour') ? 'Périscolaire' : 'Dépannages';
+    const value = details.slice(match.index + match[0].length, matches[i + 1]?.index ?? details.length).trim();
+    sections.push({ label, value });
+  }
+  return sections;
+}
+
+const collator = new Intl.Collator('fr', { sensitivity: 'base', numeric: true });
+
+export function sortOffers(offers, sortBy, distances, saved) {
+  if (sortBy === 'original') return offers;
+  const updated = offer => {
+    const match = offer.updated?.match(/^(\d{2})\/(\d{2})\/(\d{2})$/);
+    return match ? `20${match[3]}${match[2]}${match[1]}` : '';
+  };
+  const distance = offer => Number.isFinite(distances.get(offer.id)?.km) ? distances.get(offer.id).km : Infinity;
+  return offers.sort((a, b) => {
+    let order = 0;
+    if (sortBy === 'name') order = collator.compare(a.name, b.name);
+    else if (sortBy === 'places') order = b.places - a.places;
+    else if (sortBy === 'address') order = collator.compare(a.address, b.address);
+    else if (sortBy === 'distance') order = distance(a) - distance(b);
+    else if (sortBy === 'updated') order = collator.compare(updated(b), updated(a));
+    else if (sortBy === 'status') order = collator.compare(STATUSES[saved[a.id]?.status] || STATUSES.none, STATUSES[saved[b.id]?.status] || STATUSES.none);
+    return order || collator.compare(a.name, b.name);
+  });
 }
 
 export function geocodeQuery(address) {

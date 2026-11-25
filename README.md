@@ -8,11 +8,11 @@ Vous cherchez un mode de garde pour votre enfant ? Cet outil indépendant transf
 
 ## Comment ça marche ?
 
-1. Choisissez vos critères : nombre d'enfants, date de début, jours, horaires et secteur.
-2. Consultez les résultats, puis appelez directement en touchant un numéro de téléphone.
+1. Choisissez vos critères : nombre d'enfants, date de début, jours, horaires et un ou plusieurs secteurs.
+2. Triez les résultats selon vos préférences, puis appelez directement en touchant un numéro de téléphone.
 3. Gardez une trace de vos échanges : « OK de principe », « KO de principe », « Pas de réponse » ou « RDV prévu », avec sa date.
 
-Touchez une adresse pour l'ouvrir dans Google Maps. Vous pouvez aussi saisir la vôtre pour estimer la distance à vol d'oiseau et voir les résultats les plus proches.
+Touchez une adresse pour l'ouvrir dans Google Maps. Vous pouvez aussi saisir la vôtre, ou utiliser votre position pour la préremplir, puis estimer la distance à vol d'oiseau et voir les résultats les plus proches.
 
 **À savoir :** les disponibilités et les conditions peuvent changer. La date de la liste utilisée est affichée sur le site ; confirmez toujours les places, les jours, les horaires et les conditions directement auprès des professionnelles. La liste donne les disponibilités au mois, pas au jour. Les cas ambigus restent visibles avec la mention « à confirmer » ; les conditions peuvent aussi varier d'une place à l'autre.
 
@@ -22,9 +22,9 @@ Le site s'utilise sans compte et peut être ajouté à l'écran d'accueil depuis
 
 ## Vos données
 
-Vos statuts et dates de rendez-vous restent sur votre appareil : ils ne sont ni synchronisés ni envoyés au projet. Ils peuvent être perdus si vous effacez les données du navigateur ou changez d'appareil. Les deux lignes d'une même professionnelle partagent leur suivi.
+Vos statuts, dates de rendez-vous, adresse et distances calculées restent sur votre appareil : ils ne sont ni synchronisés ni envoyés au projet. Ils peuvent être perdus si vous effacez les données du navigateur ou changez d'appareil. Les deux lignes d'une même professionnelle partagent leur suivi.
 
-Le calcul des distances est facultatif. Si vous l'utilisez, votre adresse et celles de la liste sont envoyées au [service de géocodage de l'IGN](https://geoservices.ign.fr/services-web-experts-geocodage). Les distances sont approximatives et dépendent de la qualité des adresses reconnues ; certaines adresses ne peuvent pas être localisées.
+La géolocalisation et le calcul des distances sont facultatifs. Avec votre accord, votre position est envoyée au [service de géocodage de l'IGN](https://geoservices.ign.fr/services-web-experts-geocodage) pour proposer une adresse à vérifier. Lors du calcul des distances, votre adresse et celles de la liste sont envoyées à ce même service. Les distances sont approximatives et dépendent de la qualité des adresses reconnues ; certaines adresses ne peuvent pas être localisées.
 
 ## Un projet utile aux familles
 
