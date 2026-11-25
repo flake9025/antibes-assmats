@@ -1,4 +1,4 @@
-import { dateMatch, daysMatch, distanceKm, formatConditions, geocodeQuery, normalize, sortOffers, STATUSES, timeMatch } from './lib.js';
+import { dateMatch, daysMatch, distanceKm, formatConditions, geocodeQuery, mapsUrl, normalize, sortOffers, STATUSES, timeMatch } from './lib.js';
 import { excelData, exportRows, EXPORT_COLUMNS } from './export.js';
 
 const $ = selector => document.querySelector(selector);
@@ -102,6 +102,7 @@ function render() {
     ? 'Calculez les distances pour trier par proximité.' : '';
   $('#count').textContent = `${filtered.length} résultat${filtered.length === 1 ? '' : 's'} · selon la liste de la ville`;
   $('#empty').hidden = filtered.length !== 0;
+  const origin = $('#origin').value.trim();
   $('#cards').innerHTML = filtered.map(offer => {
     const contact = saved[offer.id] || {};
     const distance = distances.get(offer.id);
@@ -110,7 +111,7 @@ function render() {
     return `<article class="card">
       <div class="card-top"><span class="sector-tag">${escape(offer.sector.replace('Antibes ', ''))}</span><span class="places">${offer.places} place${offer.places > 1 ? 's' : ''}</span></div>
       <h3>${escape(offer.name.replace(/^Mme /, ''))}</h3>
-      <p class="address"><span>⌖</span> <a href="https://www.google.com/maps/search/?api=1&amp;query=${encodeURIComponent(offer.address)}" target="_blank" rel="noopener noreferrer" aria-label="Voir ${escape(offer.address)} sur Google Maps (nouvel onglet)">${escape(offer.address)} ↗</a></p>
+      <p class="address"><span>⌖</span> <a href="${escape(mapsUrl(offer.address, origin))}" target="_blank" rel="noopener noreferrer" aria-label="${origin ? 'Itinéraire vers' : 'Voir'} ${escape(offer.address)} sur Google Maps (nouvel onglet)" title="${origin ? 'Itinéraire sur Google Maps' : 'Voir sur Google Maps'}">${escape(offer.address)} ↗</a></p>
       ${distance ? `<p class="distance-result">↗ ${distance.km.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km à vol d'oiseau<br><span class="hint">Adresse reconnue : ${escape(distance.label)}</span></p>` : ''}
       <div class="card-facts"><p><strong>Disponible à partir de</strong><br>${escape(offer.availability)}</p><p><strong>Dernière mise à jour</strong><br>${escape(offer.updated)}</p></div>
       <div class="detail"><strong>Conditions d'accueil</strong><ul class="conditions-list">${conditions}</ul>${offer.dayMatch === 'unknown' ? '<span class="uncertain">Jours à confirmer</span>' : ''}${offer.timeMatch === 'unknown' ? '<span class="uncertain">Horaires à confirmer</span>' : ''}</div>

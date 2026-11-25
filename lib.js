@@ -5,6 +5,14 @@ export function normalize(value) {
   return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+export function mapsUrl(address, origin) {
+  const start = origin.trim();
+  const params = new URLSearchParams(start
+    ? { api: '1', origin: start, destination: address }
+    : { api: '1', query: address });
+  return `https://www.google.com/maps/${start ? 'dir' : 'search'}/?${params}`;
+}
+
 export function formatConditions(details) {
   const pattern = /(?:Jours d['’]accuei\s*l|Amplitude horaire|[ÂA]ge de l['’]enfant|[ÂA]ge des enfant\s*s|Accueil en dehors des vacances scolaires|Accueil pour un périscolaire|Pour les dépannages)\s*:/gi;
   const matches = [...details.matchAll(pattern)];

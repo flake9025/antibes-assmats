@@ -1,7 +1,21 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { readFile } from 'node:fs/promises';
-import { daysMatch, dateMatch, distanceKm, formatConditions, geocodeQuery, sortOffers, timeMatch } from '../lib.js';
+import { daysMatch, dateMatch, distanceKm, formatConditions, geocodeQuery, mapsUrl, sortOffers, timeMatch } from '../lib.js';
+
+test('Google Maps : itinéraire avec origine, recherche sinon', () => {
+  const destination = "2 rue de l'Église & du Port, Antibes";
+  const origin = '  1 avenue A & B, Antibes  ';
+  const route = new URL(mapsUrl(destination, origin));
+  assert.equal(route.pathname, '/maps/dir/');
+  assert.equal(route.searchParams.get('api'), '1');
+  assert.equal(route.searchParams.get('origin'), origin.trim());
+  assert.equal(route.searchParams.get('destination'), destination);
+  const search = new URL(mapsUrl(destination, '  '));
+  assert.equal(search.pathname, '/maps/search/');
+  assert.equal(search.searchParams.get('query'), destination);
+  assert.equal(search.searchParams.has('origin'), false);
+});
 
 test('filtres de jours : exclusion certaine et cas ambigus', () => {
   assert.equal(daysMatch("Jours d'accueil : 4 jours sans mercredi Amplitude horaire : 8h", ['mercredi']), 'no');
