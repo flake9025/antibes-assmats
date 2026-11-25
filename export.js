@@ -1,4 +1,4 @@
-import { formatConditions, STATUSES } from './lib.js';
+import { daysSince, formatConditions, STATUSES } from './lib.js';
 
 export const EXPORT_COLUMNS = [
   ['name', 'Nom'],
@@ -12,6 +12,8 @@ export const EXPORT_COLUMNS = [
   ['distance', 'Distance à vol d’oiseau (km)'],
   ['updated', 'Mise à jour'],
   ['status', 'Suivi'],
+  ['waitingSince', 'Date du contact'],
+  ['waitingDays', "Jours d'attente"],
   ['meeting', 'Date du rendez-vous'],
   ['sourceDate', 'Date de la liste']
 ];
@@ -32,6 +34,8 @@ export function exportRows(offers, saved, distances, sourceDate) {
       distance: Number.isFinite(km) ? Math.round(km * 10) / 10 : '',
       updated: offer.updated,
       status: STATUSES[contact.status] || STATUSES.none,
+      waitingSince: contact.status === 'awaiting' ? (contact.waitingSince || '') : '',
+      waitingDays: contact.status === 'awaiting' ? (daysSince(contact.waitingSince) ?? '') : '',
       meeting: contact.status === 'meeting' ? (contact.meeting || '').replace('T', ' ') : '',
       sourceDate
     };

@@ -1,4 +1,4 @@
-import { dateMatch, daysMatch, distanceKm, firstDayNextMonth, formatConditions, geocodeQuery, mapsUrl, normalize, sortOffers, STATUSES, timeMatch } from './lib.js';
+import { dateMatch, daysMatch, daysSince, distanceKm, firstDayNextMonth, formatConditions, geocodeQuery, localDate, mapsUrl, normalize, sortOffers, STATUSES, timeMatch } from './lib.js';
 import { excelData, exportRows, EXPORT_COLUMNS } from './export.js';
 
 const $ = selector => document.querySelector(selector);
@@ -50,7 +50,9 @@ function restoreFilters() {
   }
   for (const [key, selector] of Object.entries(filterGroups)) {
     if (!Array.isArray(savedFilters[key])) continue;
-    document.querySelectorAll(`${selector} input`).forEach(input => { input.checked = savedFilters[key].includes(input.value); });
+    document.querySelectorAll(`${selector} input`).forEach(input => {
+      input.checked = savedFilters[key].includes(input.value) || (key === 'statuses' && input.value === 'awaiting' && !savedFilters.statusOptionsVersion);
+    });
   }
 }
 
@@ -59,6 +61,7 @@ function saveFilters() {
   for (const [key, selector] of Object.entries(filterGroups)) {
     savedFilters[key] = [...document.querySelectorAll(`${selector} input:checked`)].map(input => input.value);
   }
+  savedFilters.statusOptionsVersion = 1;
   try {
     localStorage.setItem(filtersKey, JSON.stringify(savedFilters));
     $('#filter-message').textContent = 'Vos critères sont mémorisés sur cet appareil.';
@@ -131,10 +134,30 @@ function render() {
       <div class="detail"><strong>Conditions d'accueil</strong><ul class="conditions-list">${conditions}</ul>${offer.dayMatch === 'unknown' ? '<span class="uncertain">Jours à confirmer</span>' : ''}${offer.timeMatch === 'unknown' ? '<span class="uncertain">Horaires à confirmer</span>' : ''}</div>
       <div class="card-bottom"><div class="phones">${offer.phones.map(phone => `<a href="tel:${escape(phone.replace(/\D/g, ''))}">☎ ${escape(phone)}</a>`).join('')}</div>
       <a class="pdf-link" href="input/20261120-liste-Asmat-internet.pdf#page=${offer.page}" target="_blank" rel="noopener">Voir dans le PDF ↗</a></div>
-      <div class="tracking"><label>Suivi <select data-status="${escape(offer.id)}">${options}</select></label>${contact.status === 'meeting' ? `<label>Date du RDV <input type="datetime-local" data-meeting="${escape(offer.id)}" value="${escape(contact.meeting || '')}"></label>` : ''}</div>
+      <div class="tracking"><label>Suivi <select data-status="${escape(offer.id)}">${options}</select></label>${contact.status === 'meeting' ? `<label>Date du RDV <input type="datetime-local" data-meeting="${escape(offer.id)}" value="${escape(contact.meeting || '')}"></label>` : ''}${contact.status === 'awaiting' ? `<label>Date du contact <input type="date" data-waiting="${escape(offer.id)}" max="${localDate()}" value="${escape(contact.waitingSince || '')}"><span class="waiting-count" data-waiting-count="${escape(offer.id)}"></span></label>` : ''}</div>
     </article>`;
   }).join('');
+  updateWaitingDurations();
 }
+
+function updateWaitingDurations() {
+  document.querySelectorAll('[data-waiting-count]').forEach(element => {
+    const date = saved[element.dataset.waitingCount]?.waitingSince;
+    const days = daysSince(date);
+    element.textContent = days === null ? (date ? 'Date à vérifier.' : '') : `En attente depuis ${days} jour${days === 1 ? '' : 's'}`;
+  });
+  document.querySelectorAll('[data-waiting]').forEach(input => { input.max = localDate(); });
+}
+
+function scheduleWaitingRefresh() {
+  const next = new Date();
+  next.setHours(24, 0, 0, 50);
+  setTimeout(() => { updateWaitingDurations(); scheduleWaitingRefresh(); }, next - Date.now());
+}
+scheduleWaitingRefresh();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') updateWaitingDurations();
+});
 
 for (const selector of ['#query', '#places', '#start', '#time-start', '#time-end', '#sort', '.days', '.sector-options', '.status-options']) {
   $(selector).addEventListener('input', () => { saveFilters(); render(); });
@@ -150,11 +173,14 @@ $('#reset').addEventListener('click', () => {
   render();
 });
 $('#cards').addEventListener('change', event => {
-  const id = event.target.dataset.status || event.target.dataset.meeting;
+  const id = event.target.dataset.status || event.target.dataset.meeting || event.target.dataset.waiting;
   if (!id) return;
   saved[id] ||= {};
-  if (event.target.dataset.status) saved[id].status = event.target.value;
-  else saved[id].meeting = event.target.value;
+  if (event.target.dataset.status) {
+    if (event.target.value === 'awaiting' && saved[id].status !== 'awaiting') saved[id].waitingSince = localDate();
+    saved[id].status = event.target.value;
+  } else if (event.target.dataset.meeting) saved[id].meeting = event.target.value;
+  else saved[id].waitingSince = event.target.value;
   try { localStorage.setItem(storageKey, JSON.stringify(saved)); }
   catch { alert("Impossible d'enregistrer le suivi sur cet appareil."); }
   render();

@@ -1,5 +1,5 @@
 export const DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi'];
-export const STATUSES = { none: 'À contacter', ok: 'OK de principe', ko: 'KO de principe', 'no-answer': 'Pas de réponse', meeting: 'RDV prévu' };
+export const STATUSES = { none: 'À contacter', awaiting: 'En attente de réponse', ok: 'OK de principe', ko: 'KO de principe', 'no-answer': 'Pas de réponse', meeting: 'RDV prévu' };
 
 export function normalize(value) {
   return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -8,6 +8,19 @@ export function normalize(value) {
 export function firstDayNextMonth(today = new Date()) {
   const next = new Date(today.getFullYear(), today.getMonth() + 1, 1);
   return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-01`;
+}
+
+export function localDate(today = new Date()) {
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+}
+
+export function daysSince(date, today = new Date()) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const start = Date.parse(`${date}T00:00:00Z`);
+  if (!Number.isFinite(start) || new Date(start).toISOString().slice(0, 10) !== date) return null;
+  const end = Date.parse(`${localDate(today)}T00:00:00Z`);
+  const days = (end - start) / 86400000;
+  return days >= 0 ? days : null;
 }
 
 export function mapsUrl(address, origin) {

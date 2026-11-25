@@ -1,7 +1,16 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { readFile } from 'node:fs/promises';
-import { daysMatch, dateMatch, distanceKm, firstDayNextMonth, formatConditions, geocodeQuery, mapsAddress, mapsUrl, sortOffers, timeMatch } from '../lib.js';
+import { daysMatch, dateMatch, daysSince, distanceKm, firstDayNextMonth, formatConditions, geocodeQuery, mapsAddress, mapsUrl, sortOffers, timeMatch } from '../lib.js';
+
+test('durée d’attente en jours calendaires, sans date future ou invalide', () => {
+  const today = new Date(2027, 2, 29, 0, 5);
+  assert.equal(daysSince('2027-03-29', today), 0);
+  assert.equal(daysSince('2027-03-27', today), 2);
+  assert.equal(daysSince('2027-03-30', today), null);
+  assert.equal(daysSince('2027-02-30', today), null);
+  assert.equal(daysSince('', today), null);
+});
 
 test('date par défaut : premier jour du mois suivant, même en fin d’année', () => {
   assert.equal(firstDayNextMonth(new Date(2026, 10, 25)), '2026-12-01');

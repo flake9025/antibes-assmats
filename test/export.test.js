@@ -3,6 +3,7 @@ import { strict as assert } from 'node:assert';
 import writeExcelFile from 'write-excel-file/node';
 import { strFromU8, unzipSync } from 'fflate';
 import { excelData, exportRows } from '../export.js';
+import { localDate } from '../lib.js';
 
 test('export : données affichées, statut, rendez-vous et distance', () => {
   const offers = [{
@@ -19,13 +20,18 @@ test('export : données affichées, statut, rendez-vous et distance', () => {
   assert.equal(rows[0].status, 'RDV prévu');
   assert.equal(rows[0].meeting, '2026-12-10 14:30');
   assert.equal(exportRows(offers, { 1: { status: 'ko', meeting: '2026-12-10T14:30' } }, new Map(), '')[0].meeting, '');
+  const waiting = exportRows(offers, { 1: { status: 'awaiting', waitingSince: localDate() } }, new Map(), '')[0];
+  assert.equal(waiting.status, 'En attente de réponse');
+  assert.equal(waiting.waitingSince, localDate());
+  assert.equal(waiting.waitingDays, 0);
+  assert.equal(exportRows(offers, { 1: { status: 'ok', waitingSince: localDate() } }, new Map(), '')[0].waitingSince, '');
 });
 
 test('fichier Excel : téléphone et texte commençant par = restent du texte', async () => {
   const row = {
     name: '=1+1', sector: 'Antibes Centre', address: '1 rue du Test', phones: '06 12 34 56 78',
     places: 1, availability: 'Novembre', conditions: 'Jours : 5 jours', checks: '',
-    distance: '', updated: '20/11/26', status: 'À contacter', meeting: '', sourceDate: '20/11/2026'
+    distance: '', updated: '20/11/26', status: 'À contacter', waitingSince: '', waitingDays: '', meeting: '', sourceDate: '20/11/2026'
   };
   const bytes = await writeExcelFile(excelData([row])).toBuffer();
   const files = unzipSync(bytes);
