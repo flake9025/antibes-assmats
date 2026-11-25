@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { readFile } from 'node:fs/promises';
-import { daysMatch, dateMatch, daysSince, distanceKm, firstDayNextMonth, formatConditions, geocodeQuery, geocodeResult, mapsAddress, mapsUrl, sortOffers, timeMatch } from '../lib.js';
+import { daysMatch, dateMatch, daysSince, distanceKm, firstDayNextMonth, formatConditions, geocodeCandidates, geocodeQuery, geocodeResult, mapsAddress, mapsUrl, sortOffers, timeMatch } from '../lib.js';
 
 test('durée d’attente en jours calendaires, sans date future ou invalide', () => {
   const today = new Date(2027, 2, 29, 0, 5);
@@ -93,6 +93,30 @@ test('préparation des adresses de la liste au géocodage', () => {
   assert.equal(geocodeQuery('2 rue du Parc 06 600 Antibes'), '2 rue du Parc 06600 Antibes');
 });
 
+test('géocodage : variantes avec numéro, sans bis ou ter, puis sans numéro', () => {
+  assert.deepEqual(geocodeCandidates('793 bis Chemin des Combes 06600 Antibes'), [
+    { query: '793 bis Chemin des Combes, 06600 Antibes', allowLocality: false },
+    { query: '793 Chemin des Combes, 06600 Antibes', allowLocality: false },
+    { query: 'Chemin des Combes, 06600 Antibes', allowLocality: true }
+  ]);
+  assert.deepEqual(geocodeCandidates('5 ter Bd. du Val Claret 06600 Antibes'), [
+    { query: '5 ter Bd. du Val Claret, 06600 Antibes', allowLocality: false },
+    { query: '5 ter Boulevard du Val Claret, 06600 Antibes', allowLocality: false },
+    { query: '5 Boulevard du Val Claret, 06600 Antibes', allowLocality: false },
+    { query: 'Boulevard du Val Claret, 06600 Antibes', allowLocality: true }
+  ]);
+  assert.deepEqual(geocodeCandidates('905 chemin du Val Bosquet 06600 Antibes').map(item => item.query), [
+    '905 chemin du Val Bosquet, 06600 Antibes',
+    '905 chemin du Valbosquet, 06600 Antibes',
+    'chemin du Valbosquet, 06600 Antibes'
+  ]);
+  assert.equal(geocodeCandidates('85 rue du jardin secret 06160 Juan les Pins')[1].query, '85 rue du jardin secret, 06160 Antibes');
+  assert.equal(geocodeCandidates('793bis Chemin des Combes 06600 Antibes')[1].query, '793 Chemin des Combes, 06600 Antibes');
+  assert.deepEqual(geocodeCandidates('Lieu-dit sans numéro, Antibes'), [
+    { query: 'Lieu-dit sans numéro, Antibes', allowLocality: true }
+  ]);
+});
+
 test('géocodage : accepter la rue exacte comme approximation uniquement pour une destination', () => {
   const query = '5 impasse des tilleuls, 06600 Antibes';
   const feature = {
@@ -106,6 +130,9 @@ test('géocodage : accepter la rue exacte comme approximation uniquement pour un
   assert.equal(geocodeResult({ ...feature, properties: { ...feature.properties, score: 0.79 } }, query, true), null);
   assert.equal(geocodeResult({ ...feature, geometry: { coordinates: [NaN, 43.6] } }, query, true), null);
   assert.deepEqual(geocodeResult({ ...feature, properties: { ...feature.properties, type: 'housenumber' } }, query), { coordinates: [7.11, 43.6], label: feature.properties.label });
+  assert.deepEqual(geocodeResult({ ...feature, properties: { ...feature.properties, type: 'street' } }, 'impasse des tilleuls, 06600 Antibes', true), { coordinates: [7.11, 43.6], label: feature.properties.label });
+  assert.equal(geocodeResult({ ...feature, properties: { ...feature.properties, type: 'housenumber' } }, 'impasse des tilleuls, 06600 Antibes', true), null);
+  assert.equal(geocodeResult({ ...feature, properties: { ...feature.properties, type: 'street', name: 'Avenue des Tilleuls' } }, 'impasse des tilleuls, 06600 Antibes', true), null);
 });
 test('extraction : les lignes fusionnées ne débordent pas sur les voisines', async t => {
   const source = JSON.parse(await readFile(new URL('../source.json', import.meta.url), 'utf8'));

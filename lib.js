@@ -87,15 +87,30 @@ export function geocodeQuery(address) {
   return `${clean}, ${postalCode ? `${postalCode} ` : ''}${city}`;
 }
 
+export function geocodeCandidates(address) {
+  const original = geocodeQuery(address);
+  const normalized = original
+    .replace(/Juan[\s-]+les[\s-]+Pins\s*$/i, 'Antibes')
+    .replace(/^(\d+\s*(?:bis|ter)?\s*,?\s*)bd\.?\s+/i, '$1Boulevard ')
+    .replace(/^(\d+\s*(?:bis|ter)?\s*,?\s*)av\.?\s+/i, '$1Avenue ')
+    .replace(/\bval[\s-]+bosquet\b/i, 'Valbosquet');
+  const withoutSuffix = normalized.replace(/^(\d+)\s*(?:bis|ter)\b/i, '$1');
+  const withoutNumber = withoutSuffix.replace(/^\d+\s*,?\s*/, '');
+  const candidates = [original, normalized, withoutSuffix].filter((query, index, list) => list.indexOf(query) === index)
+    .map(query => ({ query, allowLocality: withoutNumber === withoutSuffix }));
+  if (withoutNumber !== withoutSuffix) candidates.push({ query: withoutNumber, allowLocality: true });
+  return candidates;
+}
+
 export function geocodeResult(feature, query, allowLocality = false) {
   const properties = feature?.properties;
   const coordinates = feature?.geometry?.coordinates;
   if (!Number.isFinite(properties?.score) || properties.score < 0.7 ||
       typeof properties.label !== 'string' || !Array.isArray(coordinates) ||
       coordinates.length < 2 || !coordinates.slice(0, 2).every(Number.isFinite)) return null;
-  if (properties.type === 'housenumber') return { coordinates, label: properties.label };
-  if (!allowLocality || properties.type !== 'locality' || properties.score < 0.8 || properties.citycode !== '06004') return null;
-  const street = query.replace(/^\d+\s*(?:bis|ter)?\s*,?\s*/i, '').replace(/,\s*(?:\d{5}\s+)?(?:Antibes|Juan-les-Pins)\s*$/i, '').trim();
+  if (properties.type === 'housenumber') return allowLocality && !/^\d/.test(query) ? null : { coordinates, label: properties.label };
+  if (!allowLocality || !['street', 'locality'].includes(properties.type) || properties.score < 0.8 || properties.citycode !== '06004') return null;
+  const street = query.replace(/^\d+\s*(?:bis|ter)?\s*,?\s*/i, '').replace(/,?\s+(?:\d{5}\s+)?(?:Antibes|Juan-les-Pins)\s*$/i, '').trim();
   const comparable = text => normalize(text).replace(/[’']/g, "'").replace(/\s+/g, ' ').trim();
   if (!street || typeof properties.name !== 'string' || comparable(street) !== comparable(properties.name)) return null;
   return { coordinates, label: properties.label };

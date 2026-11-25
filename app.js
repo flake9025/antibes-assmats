@@ -1,4 +1,4 @@
-import { dateMatch, daysMatch, daysSince, distanceKm, firstDayNextMonth, formatConditions, geocodeQuery, geocodeResult, localDate, mapsUrl, normalize, sortOffers, STATUSES, timeMatch } from './lib.js';
+import { dateMatch, daysMatch, daysSince, distanceKm, firstDayNextMonth, formatConditions, geocodeCandidates, geocodeResult, localDate, mapsUrl, normalize, sortOffers, STATUSES, timeMatch } from './lib.js';
 import { excelData, exportRows, EXPORT_COLUMNS } from './export.js';
 
 const $ = selector => document.querySelector(selector);
@@ -298,7 +298,12 @@ async function calculateDistances(missingOnly = false) {
       while (byAddress.length && run === geoRun) {
         const address = byAddress.shift();
         try {
-          const result = await geocode(geocodeQuery(address), true);
+          let result;
+          for (const candidate of geocodeCandidates(address)) {
+            if (run !== geoRun) return;
+            result = await geocode(candidate.query, candidate.allowLocality);
+            if (result) break;
+          }
           if (run !== geoRun) return;
           if (result) for (const offer of offers.filter(item => item.address === address)) {
             distances.set(offer.id, { km: distanceKm(origin.coordinates, result.coordinates), label: result.label });
