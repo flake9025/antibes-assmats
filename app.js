@@ -329,7 +329,8 @@ try {
     locationMessage('La liste a changé : recalculez les distances.');
   }
   const [year, month, day] = source.pdfDate.split('-').map(Number);
-  $('#source-date').textContent = `Liste municipale du ${new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(year, month - 1, day)))}.`;
+  const sourceDateLabel = `Liste municipale du ${new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(year, month - 1, day)))}.`;
+  $('#source-date').textContent = $('#mobile-source-date').textContent = sourceDateLabel;
   render();
 } catch {
   $('#count').textContent = 'Impossible de charger la liste. Vérifiez votre connexion et rechargez la page.';
