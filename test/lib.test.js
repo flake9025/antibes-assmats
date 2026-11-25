@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { readFile } from 'node:fs/promises';
-import { daysMatch, dateMatch, distanceKm, firstDayNextMonth, formatConditions, geocodeQuery, mapsUrl, sortOffers, timeMatch } from '../lib.js';
+import { daysMatch, dateMatch, distanceKm, firstDayNextMonth, formatConditions, geocodeQuery, mapsAddress, mapsUrl, sortOffers, timeMatch } from '../lib.js';
 
 test('date par défaut : premier jour du mois suivant, même en fin d’année', () => {
   assert.equal(firstDayNextMonth(new Date(2026, 10, 25)), '2026-12-01');
@@ -21,6 +21,18 @@ test('Google Maps : itinéraire avec origine, recherche sinon', () => {
   assert.equal(search.pathname, '/maps/search/');
   assert.equal(search.searchParams.get('query'), destination);
   assert.equal(search.searchParams.has('origin'), false);
+});
+
+test('Google Maps : simplification des adresses sans perdre le code postal', () => {
+  const address = '296 Chemin des oliviers Bât A Les oliviers 06 600 Antibes';
+  const expected = '296 Chemin des oliviers, 06600 Antibes';
+  assert.equal(mapsAddress(address), expected);
+  assert.equal(new URL(mapsUrl(address, 'Chez moi')).searchParams.get('destination'), expected);
+  assert.equal(new URL(mapsUrl(address, '')).searchParams.get('query'), expected);
+  assert.equal(mapsAddress('Les Nymphéas - Bât. C 85 rue du jardin secret 06160 Juan les Pins'), '85 rue du jardin secret, 06160 Juan-les-Pins');
+  assert.equal(mapsAddress('Les Terrasses - T2 357 bd Pierre Delmas Antibes'), '357 bd Pierre Delmas, Antibes');
+  assert.equal(mapsAddress('2 rue du Parc 06600 Antibes'), '2 rue du Parc 06600 Antibes');
+  assert.equal(mapsAddress('Lieu-dit sans numéro, Antibes'), 'Lieu-dit sans numéro, Antibes');
 });
 
 test('filtres de jours : exclusion certaine et cas ambigus', () => {

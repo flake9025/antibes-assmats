@@ -12,9 +12,10 @@ export function firstDayNextMonth(today = new Date()) {
 
 export function mapsUrl(address, origin) {
   const start = origin.trim();
+  const destination = mapsAddress(address);
   const params = new URLSearchParams(start
-    ? { api: '1', origin: start, destination: address }
-    : { api: '1', query: address });
+    ? { api: '1', origin: start, destination }
+    : { api: '1', query: destination });
   return `https://www.google.com/maps/${start ? 'dir' : 'search'}/?${params}`;
 }
 
@@ -65,6 +66,18 @@ export function geocodeQuery(address) {
   if (!street) return address;
   const clean = street.split(/\s+(?:résidence|residence|rés\.|res\.|bât\.?|bat\.?|bâtiment|batiment|villa|le hameau|parc|domaine|les logis|les palmas)\b|\s+-|\b0\s*6\s*(?:160|600)\b/i)[0].trim();
   return `${clean}, Antibes`;
+}
+
+export function mapsAddress(address) {
+  const query = geocodeQuery(address);
+  if (query === address) return address;
+  const street = query.replace(/,\s*Antibes$/, '')
+    .replace(/(?:,\s*|\s+)Antibes\s*$/i, '')
+    .replace(/,\s*$/, '').trim();
+  if (/\b(?:de|du|des|le|la)\s*$/i.test(street)) return address;
+  const postalCode = address.match(/\b0\s*6\s*(?:160|600)\b/)?.[0].replace(/\s/g, '');
+  const city = /\bjuan[\s-]+les[\s-]+pins\b/i.test(address) ? 'Juan-les-Pins' : 'Antibes';
+  return `${street}, ${postalCode ? `${postalCode} ` : ''}${city}`;
 }
 
 export function daysMatch(details, selected) {

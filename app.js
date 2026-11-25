@@ -163,7 +163,7 @@ $('#cards').addEventListener('change', event => {
 $('#export-pdf').addEventListener('click', () => {
   const rows = exportRows(currentResults, saved, distances, sourceDate);
   if (!rows.length) return;
-  $('#print-export').innerHTML = `<h1>AssMat Antibes Facile</h1><p>${rows.length} résultat${rows.length > 1 ? 's' : ''} · Liste municipale du ${escape(sourceDate)}</p><p>Disponibilités et conditions à confirmer auprès des professionnelles.</p>${rows.map(row => `<article class="print-result"><h2>${escape(row.name)}</h2><dl>${EXPORT_COLUMNS.filter(([key]) => key !== 'name' && key !== 'sourceDate' && row[key] !== '').map(([key, title]) => `<div><dt>${escape(title)}</dt><dd>${escape(row[key])}</dd></div>`).join('')}</dl></article>`).join('')}`;
+  $('#print-export').innerHTML = `<h1>Easy Nanny Antibes</h1><p>${rows.length} résultat${rows.length > 1 ? 's' : ''} · Liste municipale du ${escape(sourceDate)}</p><p>Disponibilités et conditions à confirmer auprès des professionnelles.</p>${rows.map(row => `<article class="print-result"><h2>${escape(row.name)}</h2><dl>${EXPORT_COLUMNS.filter(([key]) => key !== 'name' && key !== 'sourceDate' && row[key] !== '').map(([key, title]) => `<div><dt>${escape(title)}</dt><dd>${escape(row[key])}</dd></div>`).join('')}</dl></article>`).join('')}`;
   window.print();
 });
 
@@ -179,7 +179,7 @@ $('#export-excel').addEventListener('click', async () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'assmat-antibes-resultats.xlsx';
+    link.download = 'easy-nanny-antibes-resultats.xlsx';
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
   } catch {

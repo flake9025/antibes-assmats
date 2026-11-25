@@ -1,8 +1,8 @@
-# AssMat Antibes Facile
+# Easy Nanny Antibes (ENA)
 
 **Trouver une assistante maternelle à Antibes et Juan-les-Pins, sans parcourir un long PDF.**
 
-[**Ouvrir AssMat Antibes Facile →**](https://flake9025.github.io/antibes-assmats/)
+[**Ouvrir Easy Nanny Antibes →**](https://flake9025.github.io/antibes-assmats/)
 
 Vous cherchez un mode de garde pour votre enfant ? Cet outil indépendant transforme la [liste publique de la Ville d'Antibes](https://www.calameo.com/antibes-juanlespins/read/0020745049d2a4b6c7d81?authid=eugdIT3QJTmw) en une recherche simple, utilisable sur téléphone et ordinateur.
 
@@ -12,11 +12,11 @@ Vous cherchez un mode de garde pour votre enfant ? Cet outil indépendant transf
 2. Triez les résultats selon vos préférences, puis appelez directement en touchant un numéro de téléphone.
 3. Gardez une trace de vos échanges : « OK de principe », « KO de principe », « Pas de réponse » ou « RDV prévu », avec sa date.
 
-Vous pouvez sélectionner plusieurs statuts de suivi ; les contacts « KO de principe » sont masqués par défaut.
+Vous pouvez sélectionner plusieurs statuts de suivi ; les contacts « KO de principe » et « Pas de réponse » sont masqués par défaut.
 
 Exportez les résultats affichés en Excel ou choisissez **PDF** pour les imprimer ou les enregistrer en PDF. Ces fichiers incluent votre suivi des contacts.
 
-Touchez une adresse pour l'ouvrir dans Google Maps. Vous pouvez aussi saisir la vôtre ou utiliser votre position pour estimer la distance à vol d'oiseau et voir les résultats les plus proches. La position proposée est approximative ; vous pouvez la réinitialiser.
+Touchez une adresse pour l'ouvrir dans Google Maps. Vous pouvez aussi saisir la vôtre ou utiliser votre position pour estimer la distance à vol d'oiseau et voir les résultats les plus proches ; Google Maps proposera alors un itinéraire depuis cette adresse. La position proposée est approximative ; vous pouvez la réinitialiser.
 
 **À savoir :** les disponibilités et les conditions peuvent changer. La date de la liste utilisée est affichée sur le site ; confirmez toujours les places, les jours, les horaires et les conditions directement auprès des professionnelles. La liste donne les disponibilités au mois, pas au jour. Les cas ambigus restent visibles avec la mention « à confirmer » ; les conditions peuvent aussi varier d'une place à l'autre.
 
@@ -32,6 +32,6 @@ La géolocalisation et le calcul des distances sont facultatifs. Avec votre acco
 
 ## Un projet utile aux familles
 
-AssMat Antibes Facile est un projet indépendant : il n'est pas un service officiel de la Ville d'Antibes. Il s'appuie sur une liste municipale publique, mise à jour manuellement, sans garantir que les places sont encore disponibles.
+Easy Nanny Antibes est un projet indépendant : il n'est pas un service officiel de la Ville d'Antibes. Il s'appuie sur une liste municipale publique, mise à jour manuellement, sans garantir que les places sont encore disponibles.
 
 Vous connaissez une famille qui cherche une assistante maternelle ? **Partagez-lui [le site](https://flake9025.github.io/antibes-assmats/)**. Une idée ou un problème ? [Signalez-le ici](https://github.com/flake9025/antibes-assmats/issues).
