@@ -5,7 +5,7 @@ on:
   pull_request:
   workflow_dispatch:
   schedule:
-    - cron: '17 7 * * *'
+    - cron: '17 2 * * *'
 
 permissions:
   contents: read
@@ -26,10 +26,10 @@ jobs:
       - run: git diff --exit-code -- data.json source.json vendor
 
   source:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       issues: write
     steps:
       - uses: actions/checkout@v7
@@ -39,14 +39,46 @@ jobs:
       - name: Vérifier la révision Calaméo
         id: source
         run: node scripts/check-source.mjs
-      - name: Signaler une nouvelle révision
+      - name: Installer les dépendances
+        if: steps.source.outputs.changed == 'true'
+        run: npm ci
+      - name: Télécharger le PDF autorisé
         if: steps.source.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
-          REVISION: ${{ steps.source.outputs.revision }}
+          EXPECTED_REVISION: ${{ steps.source.outputs.revision }}
+        run: node scripts/download-source.mjs "$RUNNER_TEMP/liste.pdf"
+      - name: Extraire et valider la liste
+        if: steps.source.outputs.changed == 'true'
+        env:
+          EXPECTED_REVISION: ${{ steps.source.outputs.revision }}
         run: |
-          title="Nouvelle version de la liste municipale à vérifier"
-          existing=$(gh issue list --state open --limit 100 --json title --jq '[.[] | select(.title == "Nouvelle version de la liste municipale à vérifier")] | length')
+          node scripts/update-source.mjs "$RUNNER_TEMP/liste.pdf"
+          npm test
+      - name: Publier la mise à jour
+        if: steps.source.outputs.changed == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add input/20261120-liste-Asmat-internet.pdf data.json source.json sw.js
+          git diff --cached --quiet && exit 1
+          git commit -m 'Mettre à jour la liste municipale' -m 'Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>'
+          git push origin HEAD:main
+      - name: Signaler un échec de mise à jour
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Échec de la mise à jour de la liste municipale"
+          existing=$(gh issue list --state open --limit 100 --json title --jq '[.[] | select(.title == "Échec de la mise à jour de la liste municipale")] | length')
           if [ "$existing" -eq 0 ]; then
-            gh issue create --title "$title" --body "La révision Calaméo a changé : \`$REVISION\`. Vérifier la liste à la source, récupérer le nouveau PDF et contrôler les données avant de les publier. Voir le README."
+            gh issue create --title "$title" --body "La vérification ou la mise à jour automatique a échoué. Consulter l'exécution : $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. La liste publiée n'a pas été remplacée si la validation a échoué."
           fi
+
+  deploy-updated:
+    needs: source
+    if: needs.source.result == 'success'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy.yml

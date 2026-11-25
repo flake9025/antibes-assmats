@@ -107,7 +107,9 @@ test('géocodage : accepter la rue exacte comme approximation uniquement pour un
   assert.equal(geocodeResult({ ...feature, geometry: { coordinates: [NaN, 43.6] } }, query, true), null);
   assert.deepEqual(geocodeResult({ ...feature, properties: { ...feature.properties, type: 'housenumber' } }, query), { coordinates: [7.11, 43.6], label: feature.properties.label });
 });
-test('extraction : les lignes fusionnées ne débordent pas sur les voisines', async () => {
+test('extraction : les lignes fusionnées ne débordent pas sur les voisines', async t => {
+  const source = JSON.parse(await readFile(new URL('../source.json', import.meta.url), 'utf8'));
+  if (source.revision !== '261120171359-ded507ebe2ee23e40ed4c1c2c73b84d9') return t.skip('La liste de référence a changé.');
   const offers = JSON.parse(await readFile(new URL('../data.json', import.meta.url), 'utf8'));
   const dinis = offers.find(offer => offer.name.includes('DINIS FERREIRA'));
   const sapanel = offers.find(offer => offer.name.includes('SAPANEL'));

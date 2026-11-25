@@ -32,6 +32,6 @@ La géolocalisation et le calcul des distances sont facultatifs. Avec votre acco
 
 ## Un projet utile aux familles
 
-Easy Nanny Antibes est un projet indépendant : il n'est pas un service officiel de la Ville d'Antibes. Il s'appuie sur une liste municipale publique, mise à jour manuellement, sans garantir que les places sont encore disponibles.
+Easy Nanny Antibes est un projet indépendant : il n'est pas un service officiel de la Ville d'Antibes. Il s'appuie sur une liste municipale publique, vérifiée chaque nuit, sans garantir que les places sont encore disponibles.
 
 Vous connaissez une famille qui cherche une assistante maternelle ? **Partagez-lui [le site](https://flake9025.github.io/antibes-assmats/)**. Une idée ou un problème ? [Signalez-le ici](https://github.com/flake9025/antibes-assmats/issues).

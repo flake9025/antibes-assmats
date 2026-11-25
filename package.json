@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "pdfjs-dist": "^6.5.438",
+    "playwright-core": "^1.65.1",
     "write-excel-file": "^4.1.1"
   }
 }

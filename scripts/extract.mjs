@@ -43,6 +43,9 @@ for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
   }
   const centers = words.filter(w => w.x >= 530 && /^\d{2}\/\d{2}\/\d{2}$/.test(w.text))
     .sort((a, b) => b.y - a.y);
+  if (blocks.some(block => !centers.some(center => center.y >= block.bottom && center.y <= block.top))) {
+    throw new Error(`Secteur sans ligne reconnue page ${pageNumber}.`);
+  }
   for (let i = 0; i < centers.length; i++) {
     const top = Math.min(...boundaries.filter(y => y > centers[i].y));
     const bottom = Math.max(...boundaries.filter(y => y < centers[i].y));
