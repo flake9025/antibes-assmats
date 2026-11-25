@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { readFile } from 'node:fs/promises';
-import { daysMatch, dateMatch, daysSince, distanceKm, firstDayNextMonth, formatConditions, geocodeQuery, mapsAddress, mapsUrl, sortOffers, timeMatch } from '../lib.js';
+import { daysMatch, dateMatch, daysSince, distanceKm, firstDayNextMonth, formatConditions, geocodeQuery, geocodeResult, mapsAddress, mapsUrl, sortOffers, timeMatch } from '../lib.js';
 
 test('durée d’attente en jours calendaires, sans date future ou invalide', () => {
   const today = new Date(2027, 2, 29, 0, 5);
@@ -79,13 +79,34 @@ test('distance à vol d’oiseau', () => {
 });
 
 test('préparation des adresses de la liste au géocodage', () => {
-  assert.equal(geocodeQuery('Les Logis - Bât. F 1485, Chemin de St Claude - 06600 Antibes'), '1485, Chemin de St Claude, Antibes');
-  assert.equal(geocodeQuery('2200, Chemin de Saint Claude Le Hameau de Saint Claude - Villa 112 06600 Antibes'), '2200, Chemin de Saint Claude, Antibes');
-  assert.equal(geocodeQuery('Les Mimosas A 642, Bd Guillaume Apollinaire 06600 Antibes'), '642, Bd Guillaume Apollinaire, Antibes');
-  assert.equal(geocodeQuery('85 rue du jardin secret 06160 Juan les Pins'), '85 rue du jardin secret, Antibes');
-  assert.equal(geocodeQuery('2200 Chemin de Saint-Claude - Villa 112 06600 Antibes'), '2200 Chemin de Saint-Claude, Antibes');
+  assert.equal(geocodeQuery('Les Logis - Bât. F 1485, Chemin de St Claude - 06600 Antibes'), '1485, Chemin de St Claude, 06600 Antibes');
+  assert.equal(geocodeQuery('2200, Chemin de Saint Claude Le Hameau de Saint Claude - Villa 112 06600 Antibes'), '2200, Chemin de Saint Claude, 06600 Antibes');
+  assert.equal(geocodeQuery('Les Mimosas A 642, Bd Guillaume Apollinaire 06600 Antibes'), '642, Bd Guillaume Apollinaire, 06600 Antibes');
+  assert.equal(geocodeQuery('85 rue du jardin secret 06160 Juan les Pins'), '85 rue du jardin secret, 06160 Juan-les-Pins');
+  assert.equal(geocodeQuery('2200 Chemin de Saint-Claude - Villa 112 06600 Antibes'), '2200 Chemin de Saint-Claude, 06600 Antibes');
+  assert.equal(geocodeQuery('5 impasse des tilleuls 06 600 Antibes'), '5 impasse des tilleuls, 06600 Antibes');
+  assert.equal(geocodeQuery('296 Chemin des oliviers Bât A Les oliviers 06 600 Antibes'), '296 Chemin des oliviers, 06600 Antibes');
+  assert.equal(geocodeQuery('950 Bd Guillaume Apollinaire- Les Lavandes - E3 06600 Antibes'), '950 Bd Guillaume Apollinaire, 06600 Antibes');
+  assert.equal(geocodeQuery('728 route de saint jean Le Grand Chêne B 06600 Antibes'), '728 route de saint jean, 06600 Antibes');
+  assert.equal(geocodeQuery('2 rue du Général Vandenberg Caserne Gazan 06600 Antibes'), '2 rue du Général Vandenberg, 06600 Antibes');
+  assert.equal(geocodeQuery('152 Boulevard Raymond Poincaré Le Trianon Bât A 06160 Antibes Juan-Les Pins'), '152 Boulevard Raymond Poincaré, 06160 Juan-les-Pins');
+  assert.equal(geocodeQuery('2 rue du Parc 06 600 Antibes'), '2 rue du Parc 06600 Antibes');
 });
 
+test('géocodage : accepter la rue exacte comme approximation uniquement pour une destination', () => {
+  const query = '5 impasse des tilleuls, 06600 Antibes';
+  const feature = {
+    properties: { label: 'Impasse des Tilleuls 06600 Antibes', name: 'Impasse des Tilleuls', score: 0.82, type: 'locality', citycode: '06004' },
+    geometry: { coordinates: [7.11, 43.6] }
+  };
+  assert.equal(geocodeResult(feature, query), null);
+  assert.deepEqual(geocodeResult(feature, query, true), { coordinates: [7.11, 43.6], label: feature.properties.label });
+  assert.equal(geocodeResult({ ...feature, properties: { ...feature.properties, name: 'Rond-point des Tilleuls' } }, query, true), null);
+  assert.equal(geocodeResult({ ...feature, properties: { ...feature.properties, citycode: '06088' } }, query, true), null);
+  assert.equal(geocodeResult({ ...feature, properties: { ...feature.properties, score: 0.79 } }, query, true), null);
+  assert.equal(geocodeResult({ ...feature, geometry: { coordinates: [NaN, 43.6] } }, query, true), null);
+  assert.deepEqual(geocodeResult({ ...feature, properties: { ...feature.properties, type: 'housenumber' } }, query), { coordinates: [7.11, 43.6], label: feature.properties.label });
+});
 test('extraction : les lignes fusionnées ne débordent pas sur les voisines', async () => {
   const offers = JSON.parse(await readFile(new URL('../data.json', import.meta.url), 'utf8'));
   const dinis = offers.find(offer => offer.name.includes('DINIS FERREIRA'));

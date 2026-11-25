@@ -1,4 +1,4 @@
-import { dateMatch, daysMatch, daysSince, distanceKm, firstDayNextMonth, formatConditions, geocodeQuery, localDate, mapsUrl, normalize, sortOffers, STATUSES, timeMatch } from './lib.js';
+import { dateMatch, daysMatch, daysSince, distanceKm, firstDayNextMonth, formatConditions, geocodeQuery, geocodeResult, localDate, mapsUrl, normalize, sortOffers, STATUSES, timeMatch } from './lib.js';
 import { excelData, exportRows, EXPORT_COLUMNS } from './export.js';
 
 const $ = selector => document.querySelector(selector);
@@ -93,6 +93,10 @@ function locationMessage(message) {
 function showLocationSummary() {
   $('#saved-address').textContent = $('#origin').value;
   $('#location-approximate').hidden = !locationApproximate;
+  const missing = new Set(offers.filter(offer => !distances.has(offer.id)).map(offer => offer.address)).size;
+  $('#location-coverage').hidden = !missing;
+  $('#location-coverage').textContent = `${missing} adresse${missing > 1 ? 's' : ''} sans distance.`;
+  $('#complete-location').hidden = !missing;
   $('#location-form').hidden = true;
   $('#location-summary').hidden = false;
   locationMessage('');
@@ -129,7 +133,7 @@ function render() {
       <div class="card-top"><span class="sector-tag" data-sector="${escape(offer.sector)}">${escape(offer.sector.replace('Antibes ', ''))}</span><span class="places">${offer.places} place${offer.places > 1 ? 's' : ''}</span></div>
       <h3>${escape(offer.name.replace(/^Mme /, ''))}</h3>
       <p class="address"><span>⌖</span> <a href="${escape(mapsUrl(offer.address, origin))}" target="_blank" rel="noopener noreferrer" aria-label="${origin ? 'Itinéraire vers' : 'Voir'} ${escape(offer.address)} sur Google Maps (nouvel onglet)" title="${origin ? 'Itinéraire sur Google Maps' : 'Voir sur Google Maps'}">${escape(offer.address)} ↗</a></p>
-      ${distance ? `<p class="distance-result">↗ ${distance.km.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km à vol d'oiseau<br><span class="hint">Adresse reconnue : ${escape(distance.label)}</span></p>` : ''}
+      ${distance ? `<p class="distance-result">↗ ${distance.km.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km à vol d'oiseau<br><span class="hint">Adresse reconnue : ${escape(distance.label)}</span></p>` : distances.size ? '<p class="hint">Distance indisponible : adresse non localisée ou service indisponible.</p>' : ''}
       <div class="card-facts"><p><strong>Disponible à partir de</strong><br>${escape(offer.availability)}</p><p><strong>Dernière mise à jour</strong><br>${escape(offer.updated)}</p></div>
       <div class="detail"><strong>Conditions d'accueil</strong><ul class="conditions-list">${conditions}</ul>${offer.dayMatch === 'unknown' ? '<span class="uncertain">Jours à confirmer</span>' : ''}${offer.timeMatch === 'unknown' ? '<span class="uncertain">Horaires à confirmer</span>' : ''}</div>
       <div class="card-bottom"><div class="phones">${offer.phones.map(phone => `<a href="tel:${escape(phone.replace(/\D/g, ''))}">☎ ${escape(phone)}</a>`).join('')}</div>
@@ -213,15 +217,13 @@ $('#export-excel').addEventListener('click', async () => {
   } finally { button.disabled = currentResults.length === 0; }
 });
 
-async function geocode(query) {
+async function geocode(query, allowLocality = false) {
   const url = new URL('https://data.geopf.fr/geocodage/search/');
   url.searchParams.set('q', query);
   url.searchParams.set('limit', '1');
   const response = await fetch(url);
   if (!response.ok) throw new Error('Géocodage indisponible');
-  const feature = (await response.json()).features?.[0];
-  if (!feature || feature.properties.score < 0.7 || feature.properties.type !== 'housenumber') return null;
-  return { coordinates: feature.geometry.coordinates, label: feature.properties.label };
+  return geocodeResult((await response.json()).features?.[0], query, allowLocality);
 }
 
 $('#origin').addEventListener('input', () => {
@@ -231,6 +233,7 @@ $('#origin').addEventListener('input', () => {
   locationApproximate = false;
   distances = new Map();
   $('#locate').disabled = false;
+  $('#complete-location').disabled = false;
   $('#use-location').disabled = false;
   saveLocation();
   locationMessage('');
@@ -272,31 +275,29 @@ $('#use-location').addEventListener('click', async () => {
   }
 });
 
-$('#locate').addEventListener('click', async () => {
+async function calculateDistances(missingOnly = false) {
   const address = $('#origin').value.trim();
   if (!address) { $('#geo-message').textContent = "Saisissez d'abord votre adresse."; return; }
   if (!offers.length) { $('#geo-message').textContent = "La liste n'est pas encore disponible. Réessayez."; return; }
   locationRun++;
   $('#use-location').disabled = false;
   const run = ++geoRun;
-  distances = new Map();
-  saveLocation();
-  render();
   $('#locate').disabled = true;
+  $('#complete-location').disabled = true;
   $('#geo-message').textContent = 'Recherche de votre adresse…';
   try {
     const origin = await geocode(address);
     if (run !== geoRun) return;
     if (!origin) throw new Error("Adresse non reconnue avec suffisamment de précision. Ajoutez le numéro et la commune.");
     $('#geo-message').textContent = `Adresse reconnue : ${origin.label}. Calcul en cours…`;
-    const byAddress = [...new Set(offers.map(offer => offer.address))];
+    const byAddress = [...new Set(offers.filter(offer => !missingOnly || !distances.has(offer.id)).map(offer => offer.address))];
     const total = byAddress.length;
     let completed = 0;
     async function worker() {
       while (byAddress.length && run === geoRun) {
         const address = byAddress.shift();
         try {
-          const result = await geocode(geocodeQuery(address));
+          const result = await geocode(geocodeQuery(address), true);
           if (run !== geoRun) return;
           if (result) for (const offer of offers.filter(item => item.address === address)) {
             distances.set(offer.id, { km: distanceKm(origin.coordinates, result.coordinates), label: result.label });
@@ -324,8 +325,15 @@ $('#locate').addEventListener('click', async () => {
     }
   } catch (error) {
     if (run === geoRun) $('#geo-message').textContent = error.message || 'Calcul impossible. Vérifiez votre connexion.';
-  } finally { if (run === geoRun) $('#locate').disabled = false; }
-});
+  } finally {
+    if (run === geoRun) {
+      $('#locate').disabled = false;
+      $('#complete-location').disabled = false;
+    }
+  }
+}
+$('#locate').addEventListener('click', () => calculateDistances());
+$('#complete-location').addEventListener('click', () => calculateDistances(true));
 
 $('#reset-location').addEventListener('click', () => {
   geoRun++;
@@ -338,6 +346,7 @@ $('#reset-location').addEventListener('click', () => {
   $('#location-form').hidden = false;
   $('#location-summary').hidden = true;
   $('#locate').disabled = false;
+  $('#complete-location').disabled = false;
   $('#use-location').disabled = false;
   if ($('#sort').value === 'distance') {
     $('#sort').value = 'original';

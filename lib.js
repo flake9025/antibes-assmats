@@ -76,21 +76,33 @@ export function sortOffers(offers, sortBy, distances, saved) {
 
 export function geocodeQuery(address) {
   const street = address.match(/\b\d+\s*(?:bis|ter)?\s*[,]?\s*(?:avenue|av\.?|boulevard|bd\.?|rue|route|chemin|impasse|allée|allee|place|cours)\b.*/i)?.[0];
-  if (!street) return address;
-  const clean = street.split(/\s+(?:résidence|residence|rés\.|res\.|bât\.?|bat\.?|bâtiment|batiment|villa|le hameau|parc|domaine|les logis|les palmas)\b|\s+-|\b0\s*6\s*(?:160|600)\b/i)[0].trim();
-  return `${clean}, Antibes`;
+  const normalizePostalCode = text => text.replace(/\b0\s*6\s*(160|600)\b/g, (_, end) => `06${end}`);
+  if (!street) return normalizePostalCode(address);
+  const clean = street.split(/\s+(?:résidence|residence|rés|res|bât|bat|bâtiment|batiment|villa|le hameau|parc|domaine|les logis|les palmas|le grand chêne|le trianon|caserne gazan)(?=$|[\s,.\-])|\s*-\s+|\b0\s*6\s*(?:160|600)\b/i)[0]
+    .replace(/(?:,\s*|\s+)(?:Antibes|Juan[\s-]+les[\s-]+Pins)\s*$/i, '')
+    .replace(/,\s*$/, '').trim();
+  if (/\b(?:de|du|des|le|la|rue|route|chemin|avenue|boulevard|impasse|allée|allee|place|cours)\s*$/i.test(clean)) return normalizePostalCode(address);
+  const postalCode = address.match(/\b0\s*6\s*(?:160|600)\b/)?.[0].replace(/\s/g, '');
+  const city = /\bjuan[\s-]+les[\s-]+pins\b/i.test(address) ? 'Juan-les-Pins' : 'Antibes';
+  return `${clean}, ${postalCode ? `${postalCode} ` : ''}${city}`;
+}
+
+export function geocodeResult(feature, query, allowLocality = false) {
+  const properties = feature?.properties;
+  const coordinates = feature?.geometry?.coordinates;
+  if (!Number.isFinite(properties?.score) || properties.score < 0.7 ||
+      typeof properties.label !== 'string' || !Array.isArray(coordinates) ||
+      coordinates.length < 2 || !coordinates.slice(0, 2).every(Number.isFinite)) return null;
+  if (properties.type === 'housenumber') return { coordinates, label: properties.label };
+  if (!allowLocality || properties.type !== 'locality' || properties.score < 0.8 || properties.citycode !== '06004') return null;
+  const street = query.replace(/^\d+\s*(?:bis|ter)?\s*,?\s*/i, '').replace(/,\s*(?:\d{5}\s+)?(?:Antibes|Juan-les-Pins)\s*$/i, '').trim();
+  const comparable = text => normalize(text).replace(/[’']/g, "'").replace(/\s+/g, ' ').trim();
+  if (!street || typeof properties.name !== 'string' || comparable(street) !== comparable(properties.name)) return null;
+  return { coordinates, label: properties.label };
 }
 
 export function mapsAddress(address) {
-  const query = geocodeQuery(address);
-  if (query === address) return address;
-  const street = query.replace(/,\s*Antibes$/, '')
-    .replace(/(?:,\s*|\s+)Antibes\s*$/i, '')
-    .replace(/,\s*$/, '').trim();
-  if (/\b(?:de|du|des|le|la)\s*$/i.test(street)) return address;
-  const postalCode = address.match(/\b0\s*6\s*(?:160|600)\b/)?.[0].replace(/\s/g, '');
-  const city = /\bjuan[\s-]+les[\s-]+pins\b/i.test(address) ? 'Juan-les-Pins' : 'Antibes';
-  return `${street}, ${postalCode ? `${postalCode} ` : ''}${city}`;
+  return geocodeQuery(address);
 }
 
 export function daysMatch(details, selected) {
