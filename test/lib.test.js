@@ -1,7 +1,13 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { readFile } from 'node:fs/promises';
-import { daysMatch, dateMatch, distanceKm, formatConditions, geocodeQuery, mapsUrl, sortOffers, timeMatch } from '../lib.js';
+import { daysMatch, dateMatch, distanceKm, firstDayNextMonth, formatConditions, geocodeQuery, mapsUrl, sortOffers, timeMatch } from '../lib.js';
+
+test('date par défaut : premier jour du mois suivant, même en fin d’année', () => {
+  assert.equal(firstDayNextMonth(new Date(2026, 10, 25)), '2026-12-01');
+  assert.equal(firstDayNextMonth(new Date(2026, 11, 31)), '2027-01-01');
+  assert.equal(firstDayNextMonth(new Date(2027, 0, 31)), '2027-02-01');
+});
 
 test('Google Maps : itinéraire avec origine, recherche sinon', () => {
   const destination = "2 rue de l'Église & du Port, Antibes";

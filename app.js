@@ -1,4 +1,4 @@
-import { dateMatch, daysMatch, distanceKm, formatConditions, geocodeQuery, mapsUrl, normalize, sortOffers, STATUSES, timeMatch } from './lib.js';
+import { dateMatch, daysMatch, distanceKm, firstDayNextMonth, formatConditions, geocodeQuery, mapsUrl, normalize, sortOffers, STATUSES, timeMatch } from './lib.js';
 import { excelData, exportRows, EXPORT_COLUMNS } from './export.js';
 
 const $ = selector => document.querySelector(selector);
@@ -67,6 +67,9 @@ function saveFilters() {
   }
 }
 
+$('#start').value = firstDayNextMonth();
+$('#time-start').value = '08:30';
+$('#time-end').value = '17:30';
 restoreFilters();
 
 function saveLocation() {
@@ -138,8 +141,8 @@ for (const selector of ['#query', '#places', '#start', '#time-start', '#time-end
   $(selector).addEventListener('change', () => { saveFilters(); render(); });
 }
 $('#reset').addEventListener('click', () => {
-  $('#query').value = ''; $('#places').value = '1'; $('#start').value = '';
-  $('#time-start').value = ''; $('#time-end').value = '';
+  $('#query').value = ''; $('#places').value = '1'; $('#start').value = firstDayNextMonth();
+  $('#time-start').value = '08:30'; $('#time-end').value = '17:30';
   $('#sort').value = 'original';
   document.querySelectorAll('.days input, .sector-options input').forEach(input => { input.checked = false; });
   document.querySelectorAll('.status-options input').forEach(input => { input.checked = input.defaultChecked; });

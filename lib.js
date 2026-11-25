@@ -5,6 +5,11 @@ export function normalize(value) {
   return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+export function firstDayNextMonth(today = new Date()) {
+  const next = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-01`;
+}
+
 export function mapsUrl(address, origin) {
   const start = origin.trim();
   const params = new URLSearchParams(start
