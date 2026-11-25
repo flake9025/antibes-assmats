@@ -124,13 +124,14 @@ function render() {
   $('#count').textContent = `${filtered.length} résultat${filtered.length === 1 ? '' : 's'} · selon la liste de la ville`;
   $('#empty').hidden = filtered.length !== 0;
   const origin = $('#origin').value.trim();
+  const sectorMap = $('#sector-map').innerHTML;
   $('#cards').innerHTML = filtered.map(offer => {
     const contact = saved[offer.id] || {};
     const distance = distances.get(offer.id);
     const options = Object.entries(STATUSES).map(([value, label]) => `<option value="${value}"${(contact.status || 'none') === value ? ' selected' : ''}>${label}</option>`).join('');
     const conditions = formatConditions(offer.details).map(({ label, value }) => `<li><strong>${escape(label)}</strong><span>${escape(value)}</span></li>`).join('');
     return `<article class="card">
-      <div class="card-top"><span class="sector-tag" data-sector="${escape(offer.sector)}">${escape(offer.sector.replace('Antibes ', ''))}</span><span class="places">${offer.places} place${offer.places > 1 ? 's' : ''}</span></div>
+      <div class="card-top" data-sector="${escape(offer.sector)}"><div class="sector-info">${sectorMap}<span class="sector-tag">${escape(offer.sector.replace('Antibes ', ''))}</span></div><span class="places">${offer.places} place${offer.places > 1 ? 's' : ''}</span></div>
       <h3>${escape(offer.name.replace(/^Mme /, ''))}</h3>
       <p class="address"><span>⌖</span> <a href="${escape(mapsUrl(offer.address, origin))}" target="_blank" rel="noopener noreferrer" aria-label="${origin ? 'Itinéraire vers' : 'Voir'} ${escape(offer.address)} sur Google Maps (nouvel onglet)" title="${origin ? 'Itinéraire sur Google Maps' : 'Voir sur Google Maps'}">${escape(offer.address)} ↗</a></p>
       ${distance ? `<p class="distance-result">↗ ${distance.km.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km à vol d'oiseau<br><span class="hint">Adresse reconnue : ${escape(distance.label)}</span></p>` : distances.size ? '<p class="hint">Distance indisponible : adresse non localisée ou service indisponible.</p>' : ''}
