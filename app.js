@@ -1,4 +1,4 @@
-import { dateMatch, daysMatch, distanceKm, geocodeQuery, normalize } from './lib.js';
+import { dateMatch, daysMatch, distanceKm, geocodeQuery, normalize, timeMatch } from './lib.js';
 
 const $ = selector => document.querySelector(selector);
 const statuses = { none: 'À contacter', ok: 'OK de principe', ko: 'KO de principe', 'no-answer': 'Pas de réponse', meeting: 'RDV prévu' };
@@ -14,12 +14,15 @@ const escape = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&l
 function render() {
   const query = normalize($('#query').value.trim());
   const selected = [...document.querySelectorAll('.days input:checked')].map(input => input.value);
-  const filtered = offers.map(offer => ({ ...offer, dayMatch: daysMatch(offer.details, selected) }))
+  const start = $('#time-start').value, end = $('#time-end').value;
+  const invalidTime = start && end && start >= end;
+  $('#time-message').textContent = invalidTime ? "L'heure de fin doit être après l'heure de début." : "Les horaires indiquent l'amplitude possible, à confirmer.";
+  const filtered = offers.map(offer => ({ ...offer, dayMatch: daysMatch(offer.details, selected), timeMatch: invalidTime ? 'unknown' : timeMatch(offer.details, start, end) }))
     .filter(offer => offer.places >= Number($('#places').value))
     .filter(offer => !query || normalize(`${offer.name} ${offer.address} ${offer.sector}`).includes(query))
     .filter(offer => !$('#sector').value || offer.sector === $('#sector').value)
     .filter(offer => !$('#status-filter').value || (saved[offer.id]?.status || 'none') === $('#status-filter').value)
-    .filter(offer => dateMatch(offer.availability, $('#start').value, sourceYear) && offer.dayMatch !== 'no');
+    .filter(offer => dateMatch(offer.availability, $('#start').value, sourceYear) && offer.dayMatch !== 'no' && offer.timeMatch !== 'no');
   if (distances.size) filtered.sort((a, b) => (distances.get(a.id)?.km ?? Infinity) - (distances.get(b.id)?.km ?? Infinity));
   $('#count').textContent = `${filtered.length} résultat${filtered.length === 1 ? '' : 's'} · selon la liste de la ville`;
   $('#empty').hidden = filtered.length !== 0;
@@ -33,7 +36,7 @@ function render() {
       <p class="address"><span>⌖</span> ${escape(offer.address)}</p>
       ${distance ? `<p class="distance-result">↗ ${distance.km.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km à vol d'oiseau<br><span class="hint">Adresse reconnue : ${escape(distance.label)}</span></p>` : ''}
       <div class="card-facts"><p><strong>Disponible à partir de</strong><br>${escape(offer.availability)}</p><p><strong>Dernière mise à jour</strong><br>${escape(offer.updated)}</p></div>
-      <div class="detail"><strong>Conditions d'accueil</strong><p>${escape(offer.details)}</p>${offer.dayMatch === 'unknown' ? '<span class="uncertain">Jours à confirmer</span>' : ''}${offer.places > 1 ? '<span class="hint">Les places peuvent avoir des conditions différentes.</span>' : ''}</div>
+      <div class="detail"><strong>Conditions d'accueil</strong><p>${escape(offer.details)}</p>${offer.dayMatch === 'unknown' ? '<span class="uncertain">Jours à confirmer</span>' : ''}${offer.timeMatch === 'unknown' ? '<span class="uncertain">Horaires à confirmer</span>' : ''}${offer.places > 1 ? '<span class="hint">Les places peuvent avoir des conditions différentes.</span>' : ''}</div>
       <div class="card-bottom"><div class="phones">${offer.phones.map(phone => `<a href="tel:${escape(phone.replace(/\D/g, ''))}">☎ ${escape(phone)}</a>`).join('')}</div>
       <a class="pdf-link" href="input/20261120-liste-Asmat-internet.pdf#page=${offer.page}" target="_blank" rel="noopener">Voir dans le PDF ↗</a></div>
       <div class="tracking"><label>Suivi <select data-status="${escape(offer.id)}">${options}</select></label>${contact.status === 'meeting' ? `<label>Date du RDV <input type="datetime-local" data-meeting="${escape(offer.id)}" value="${escape(contact.meeting || '')}"></label>` : ''}</div>
@@ -41,12 +44,13 @@ function render() {
   }).join('');
 }
 
-for (const selector of ['#query', '#places', '#start', '#sector', '#status-filter', '.days']) {
+for (const selector of ['#query', '#places', '#start', '#time-start', '#time-end', '#sector', '#status-filter', '.days']) {
   $(selector).addEventListener('input', render);
   $(selector).addEventListener('change', render);
 }
 $('#reset').addEventListener('click', () => {
   $('#query').value = ''; $('#places').value = '1'; $('#start').value = '';
+  $('#time-start').value = ''; $('#time-end').value = '';
   $('#sector').value = ''; $('#status-filter').value = '';
   document.querySelectorAll('.days input').forEach(input => { input.checked = false; });
   render();

@@ -2,7 +2,7 @@
 
 Une application web installable pour rechercher les assistantes maternelles figurant dans la liste publique de la Ville d'Antibes et suivre ses prises de contact.
 
-La date de la liste municipale utilisée est affichée dans l'application. Les secteurs reprennent les couleurs de sa légende. Les données ne sont pas actualisées automatiquement : places, dates, horaires et conditions doivent être confirmés auprès des professionnelles. Les disponibilités sont connues au mois, pas au jour ; les jours ambigus restent visibles avec une mention « à confirmer ». Certaines places d'une même personne peuvent avoir des conditions différentes.
+La date de la liste municipale utilisée est affichée dans l'application. Les secteurs reprennent les couleurs de sa légende. Les données ne sont pas actualisées automatiquement : places, dates, horaires et conditions doivent être confirmés auprès des professionnelles. Les disponibilités sont connues au mois, pas au jour ; les jours et horaires ambigus restent visibles avec une mention « à confirmer ». Le filtre horaire compare l'amplitude indiquée, pas la disponibilité effective de chaque place. Certaines places d'une même personne peuvent avoir des conditions différentes.
 
 Le suivi et les dates de rendez-vous sont conservés dans le stockage local du navigateur, sans compte ni synchronisation. Ils peuvent être perdus si les données du navigateur sont effacées ou si l'on change d'appareil. Les deux lignes d'une même professionnelle partagent leur suivi.
 

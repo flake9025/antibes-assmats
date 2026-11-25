@@ -8,6 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
+  <style>.time-fields{display:flex;gap:8px}.time-fields label{flex:1;min-width:0;font-size:11px;color:#6b7f70}.time-fields input{margin-top:5px}</style>
   <title>Petits liens · Assistantes maternelles à Antibes</title>
 </head>
 <body>
@@ -37,7 +38,11 @@
         <fieldset><legend>Jours de garde</legend><div class="days">
           <label><input type="checkbox" value="lundi"><span>Lun</span></label><label><input type="checkbox" value="mardi"><span>Mar</span></label><label><input type="checkbox" value="mercredi"><span>Mer</span></label><label><input type="checkbox" value="jeudi"><span>Jeu</span></label><label><input type="checkbox" value="vendredi"><span>Ven</span></label>
         </div></fieldset>
-        <p class="hint">Les horaires incertains restent affichés, avec la mention « à confirmer ».</p>
+        <p class="hint">Les jours incertains restent affichés, avec la mention « à confirmer ».</p>
+        <fieldset><legend>Horaires souhaités</legend>
+          <div class="time-fields"><label>De <input id="time-start" type="time"></label><label>À <input id="time-end" type="time"></label></div>
+        </fieldset>
+        <p id="time-message" class="hint" role="status">Les horaires indiquent l'amplitude possible, à confirmer.</p>
         <label for="sector">Secteur</label>
         <select id="sector"><option value="">Tous les secteurs</option><option>Antibes Ouest résidentiel</option><option>Antibes Activités</option><option>Antibes Grand Est</option><option>Antibes Centre</option><option>Antibes Cœurs de ville et Cap</option></select>
         <label for="status-filter">Suivi des contacts</label>

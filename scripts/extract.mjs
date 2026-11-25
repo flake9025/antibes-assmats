@@ -29,12 +29,14 @@ for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
   }
   const operators = await page.getOperatorList();
   const blocks = [];
+  const boundaries = [];
   let color;
   for (let i = 0; i < operators.fnArray.length; i++) {
     if (operators.fnArray[i] === OPS.setFillRGBColor) color = operators.argsArray[i][0];
-    if (operators.fnArray[i] === OPS.constructPath && sectors[color]) {
+    if (operators.fnArray[i] === OPS.constructPath) {
       const bounds = operators.argsArray[i][2];
-      if (bounds && bounds[0] > 53 && bounds[0] < 55 && bounds[2] > 71 && bounds[2] < 73) {
+      if (bounds && bounds[0] < 6 && bounds[2] > 560 && bounds[3] - bounds[1] < 2) boundaries.push(bounds[1]);
+      if (bounds && sectors[color] && bounds[0] > 53 && bounds[0] < 55 && bounds[2] > 71 && bounds[2] < 73) {
         blocks.push({ bottom: bounds[1], top: bounds[3], color });
       }
     }
@@ -42,8 +44,9 @@ for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
   const centers = words.filter(w => w.x >= 530 && /^\d{2}\/\d{2}\/\d{2}$/.test(w.text))
     .sort((a, b) => b.y - a.y);
   for (let i = 0; i < centers.length; i++) {
-    const top = i === 0 ? (pageNumber === 1 ? 370 : Infinity) : (centers[i - 1].y + centers[i].y) / 2;
-    const bottom = i === centers.length - 1 ? -Infinity : (centers[i].y + centers[i + 1].y) / 2;
+    const top = Math.min(...boundaries.filter(y => y > centers[i].y));
+    const bottom = Math.max(...boundaries.filter(y => y < centers[i].y));
+    if (!Number.isFinite(top) || !Number.isFinite(bottom)) throw new Error(`Limites de ligne introuvables page ${pageNumber}.`);
     const row = words.filter(w => w.y < top && w.y > bottom);
     const column = (min, max) => row.filter(w => w.x >= min && w.x < max)
       .sort((a, b) => b.y - a.y || a.x - b.x).map(w => w.text).join(' ').replace(/\s+/g, ' ').trim();

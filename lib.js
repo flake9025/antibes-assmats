@@ -29,6 +29,21 @@ export function daysMatch(details, selected) {
   return 'unknown';
 }
 
+export function timeMatch(details, start, end) {
+  if (!start && !end) return 'yes';
+  const text = normalize(details);
+  if ((text.match(/jours d.accueil/g) || []).length > 1) return 'unknown';
+  const section = text.match(/amplitude horaire\s*:?\s*(.*?)(?=age de|age des|accueil pour|jours d.accueil|$)/)?.[1];
+  if (!section || /\b(?:si|selon|possible|sauf|uniquement)\b/.test(section)) return 'unknown';
+  const times = [...section.matchAll(/\b(\d{1,2})\s*h\s*(\d{0,2})\b/g)];
+  if (times.length !== 2) return 'unknown';
+  const values = times.map(([, hour, minute]) => Number(hour) * 60 + Number(minute || 0));
+  if (values.some(value => value >= 24 * 60) || values[0] >= values[1] ||
+      times.some(([, , minute]) => Number(minute || 0) >= 60)) return 'unknown';
+  const minutes = value => value ? Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 5)) : null;
+  return (start && minutes(start) < values[0]) || (end && minutes(end) > values[1]) ? 'no' : 'yes';
+}
+
 export function dateMatch(availability, selected, sourceYear = 2026) {
   if (!selected) return true;
   const text = normalize(availability);
