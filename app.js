@@ -5,6 +5,17 @@ const $ = selector => document.querySelector(selector);
 const storageKey = 'petits-liens-contacts-v1';
 const locationKey = 'petits-liens-location-v1';
 const filtersKey = 'petits-liens-filtres-v1';
+if ('serviceWorker' in navigator) {
+  let controlled = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (controlled && !reloading) {
+      reloading = true;
+      window.location.reload();
+    }
+    controlled = true;
+  });
+}
 let saved = {};
 try { saved = JSON.parse(localStorage.getItem(storageKey) || '{}') || {}; } catch { /* Local storage may be unavailable. */ }
 let savedLocation = {};
@@ -335,4 +346,12 @@ try {
 } catch {
   $('#count').textContent = 'Impossible de charger la liste. Vérifiez votre connexion et rechargez la page.';
 }
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(registration => {
+    const update = () => registration.update().catch(() => {});
+    update();
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') update();
+    });
+  }).catch(() => {});
+}
