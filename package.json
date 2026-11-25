@@ -4,9 +4,11 @@
   "type": "module",
   "scripts": {
     "extract": "node scripts/extract.mjs",
+    "vendor": "node scripts/vendor.mjs",
     "test": "node --test"
   },
   "devDependencies": {
-    "pdfjs-dist": "^6.5.438"
+    "pdfjs-dist": "^6.5.438",
+    "write-excel-file": "^4.1.1"
   }
 }

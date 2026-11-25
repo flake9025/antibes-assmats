@@ -20,9 +20,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run vendor
       - run: npm test
       - run: npm run extract
-      - run: git diff --exit-code -- data.json source.json
+      - run: git diff --exit-code -- data.json source.json vendor
 
   source:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'

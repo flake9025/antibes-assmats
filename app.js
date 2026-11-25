@@ -1,4 +1,5 @@
 import { dateMatch, daysMatch, distanceKm, formatConditions, geocodeQuery, normalize, sortOffers, STATUSES, timeMatch } from './lib.js';
+import { excelData, exportRows, EXPORT_COLUMNS } from './export.js';
 
 const $ = selector => document.querySelector(selector);
 const storageKey = 'petits-liens-contacts-v1';
@@ -11,7 +12,9 @@ if (typeof savedLocation.address === 'string') $('#origin').value = savedLocatio
 let offers = [];
 let sourceYear = 2026;
 let sourceRevision = '';
+let sourceDate = '';
 let distances = new Map();
+let currentResults = [];
 let geoRun = 0;
 let locationRun = 0;
 let locationEdited = false;
@@ -57,6 +60,8 @@ function render() {
     .filter(offer => statuses.includes(saved[offer.id]?.status || 'none'))
     .filter(offer => dateMatch(offer.availability, $('#start').value, sourceYear) && offer.dayMatch !== 'no' && offer.timeMatch !== 'no');
   sortOffers(filtered, $('#sort').value, distances, saved);
+  currentResults = filtered;
+  $('#export-pdf').disabled = $('#export-excel').disabled = filtered.length === 0;
   $('#sort-hint').textContent = $('#sort').value === 'distance' && !distances.size
     ? 'Calculez les distances pour trier par proximité.' : '';
   $('#count').textContent = `${filtered.length} résultat${filtered.length === 1 ? '' : 's'} · selon la liste de la ville`;
@@ -101,6 +106,33 @@ $('#cards').addEventListener('change', event => {
   try { localStorage.setItem(storageKey, JSON.stringify(saved)); }
   catch { alert("Impossible d'enregistrer le suivi sur cet appareil."); }
   render();
+});
+
+$('#export-pdf').addEventListener('click', () => {
+  const rows = exportRows(currentResults, saved, distances, sourceDate);
+  if (!rows.length) return;
+  $('#print-export').innerHTML = `<h1>AssMat Antibes Facile</h1><p>${rows.length} résultat${rows.length > 1 ? 's' : ''} · Liste municipale du ${escape(sourceDate)}</p><p>Disponibilités et conditions à confirmer auprès des professionnelles.</p>${rows.map(row => `<article class="print-result"><h2>${escape(row.name)}</h2><dl>${EXPORT_COLUMNS.filter(([key]) => key !== 'name' && key !== 'sourceDate' && row[key] !== '').map(([key, title]) => `<div><dt>${escape(title)}</dt><dd>${escape(row[key])}</dd></div>`).join('')}</dl></article>`).join('')}`;
+  window.print();
+});
+
+$('#export-excel').addEventListener('click', async () => {
+  const rows = exportRows(currentResults, saved, distances, sourceDate);
+  if (!rows.length) return;
+  const button = $('#export-excel');
+  button.disabled = true;
+  $('#export-message').textContent = '';
+  try {
+    const columns = EXPORT_COLUMNS.map(([key]) => ({ width: key === 'conditions' ? 45 : key === 'address' ? 36 : 22 }));
+    const blob = await window.writeXlsxFile(excelData(rows), { columns, stickyRowsCount: 1 }).toBlob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'assmat-antibes-resultats.xlsx';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch {
+    $('#export-message').textContent = "Impossible de créer le fichier Excel. Réessayez.";
+  } finally { button.disabled = currentResults.length === 0; }
 });
 
 async function geocode(query) {
@@ -241,6 +273,7 @@ try {
   const source = await sourceResponse.json();
   sourceRevision = source.revision;
   sourceYear = Number(source.pdfDate.slice(0, 4));
+  sourceDate = source.pdfDate.split('-').reverse().join('/');
   if (!locationEdited && savedLocation.revision === sourceRevision && savedLocation.distances && typeof savedLocation.distances === 'object') {
     distances = new Map(Object.entries(savedLocation.distances).filter(([, value]) => Number.isFinite(value?.km) && typeof value.label === 'string'));
     if (distances.size) {
