@@ -1,0 +1,15 @@
+{
+  "name": "Petits liens — Assistantes maternelles à Antibes",
+  "short_name": "Petits liens",
+  "description": "Rechercher et suivre les assistantes maternelles à Antibes.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8f6f0",
+  "theme_color": "#183c38",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

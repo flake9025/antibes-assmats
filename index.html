@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#183c38">
+  <meta name="description" content="Rechercher une assistante maternelle à Antibes et suivre ses contacts.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <title>Petits liens · Assistantes maternelles à Antibes</title>
+</head>
+<body>
+  <header class="hero">
+    <div class="shell">
+      <a class="brand" href="./"><span class="brand-mark">✳</span> petits liens <span class="brand-city">/ ANTIBES</span></a>
+      <div class="hero-content">
+        <p class="eyebrow"><span class="dot"></span> LE CARNET DES FAMILLES</p>
+        <h1>Une belle rencontre<br>pour <em>grandir.</em></h1>
+        <p>Les assistantes maternelles disponibles à Antibes, réunies au même endroit pour simplifier votre recherche.</p>
+      </div>
+      <div class="hero-note"><span>✳</span> Un petit pas<br>pour une grande aventure.</div>
+    </div>
+  </header>
+  <main class="shell main">
+    <div class="source"><span>✦</span><p><strong id="source-date">Liste municipale.</strong> Les places et les conditions évoluent : confirmez-les directement auprès des professionnelles. <a href="input/20261120-liste-Asmat-internet.pdf">Consulter le document original ↗</a></p></div>
+    <div class="layout">
+      <aside class="filters">
+        <div class="filter-heading"><div><p class="eyebrow">VOTRE RECHERCHE</p><h2>Les critères</h2></div><button id="reset" class="text-button" type="button">Effacer</button></div>
+        <label for="query">Nom ou adresse</label>
+        <input id="query" type="search" placeholder="Nom, rue, quartier…">
+        <label for="places">Nombre d'enfants</label>
+        <select id="places"><option value="1">1 enfant ou plus</option><option value="2">2 enfants ou plus</option><option value="3">3 enfants ou plus</option></select>
+        <label for="start">Début de garde souhaité</label>
+        <input id="start" type="date">
+        <p class="hint">Les disponibilités sont indiquées au mois : le jour exact est à confirmer.</p>
+        <fieldset><legend>Jours de garde</legend><div class="days">
+          <label><input type="checkbox" value="lundi"><span>Lun</span></label><label><input type="checkbox" value="mardi"><span>Mar</span></label><label><input type="checkbox" value="mercredi"><span>Mer</span></label><label><input type="checkbox" value="jeudi"><span>Jeu</span></label><label><input type="checkbox" value="vendredi"><span>Ven</span></label>
+        </div></fieldset>
+        <p class="hint">Les horaires incertains restent affichés, avec la mention « à confirmer ».</p>
+        <label for="sector">Secteur</label>
+        <select id="sector"><option value="">Tous les secteurs</option><option>Antibes Ouest résidentiel</option><option>Antibes Activités</option><option>Antibes Grand Est</option><option>Antibes Centre</option><option>Antibes Cœurs de ville et Cap</option></select>
+        <label for="status-filter">Suivi des contacts</label>
+        <select id="status-filter"><option value="">Tous les contacts</option><option value="none">À contacter</option><option value="ok">OK de principe</option><option value="ko">KO de principe</option><option value="no-answer">Pas de réponse</option><option value="meeting">RDV prévu</option></select>
+        <div class="distance-box">
+          <div class="distance-title">⌁ <strong>Autour de chez vous</strong></div>
+          <p>Estimez la distance à vol d'oiseau depuis votre adresse.</p>
+          <label class="sr-only" for="origin">Votre adresse</label>
+          <input id="origin" placeholder="Votre adresse à Antibes" autocomplete="street-address">
+          <button type="button" id="locate" class="secondary-button">Calculer les distances →</button>
+          <p class="hint">Votre adresse et celles de la liste sont envoyées au service public de géocodage IGN uniquement lors du calcul. Les distances restent approximatives.</p>
+          <p id="geo-message" class="geo-message" role="status"></p>
+        </div>
+      </aside>
+      <section class="results" aria-labelledby="results-title">
+        <div class="results-heading"><div><p class="eyebrow">DES CONTACTS PRÈS DE VOUS</p><h2 id="results-title">Les assistantes maternelles</h2><p id="count" aria-live="polite"></p></div><span class="results-flower">✳</span></div>
+        <div id="cards" class="cards"></div>
+        <p id="empty" class="empty" hidden>Aucun résultat pour ces critères. Essayez d'élargir votre recherche.</p>
+      </section>
+    </div>
+  </main>
+  <footer class="shell footer"><span>✳ petits liens <small>ANTIBES</small></span><p>Un outil indépendant, basé sur la liste publique de la Ville d'Antibes. Suivi enregistré sur cet appareil uniquement.</p></footer>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

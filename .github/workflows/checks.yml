@@ -1,0 +1,51 @@
+name: Vérifications et veille de la liste
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 7 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run extract
+      - run: git diff --exit-code -- data.json source.json
+
+  source:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Vérifier la révision Calaméo
+        id: source
+        run: node scripts/check-source.mjs
+      - name: Signaler une nouvelle révision
+        if: steps.source.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REVISION: ${{ steps.source.outputs.revision }}
+        run: |
+          title="Nouvelle version de la liste municipale à vérifier"
+          existing=$(gh issue list --state open --limit 100 --json title --jq '[.[] | select(.title == "Nouvelle version de la liste municipale à vérifier")] | length')
+          if [ "$existing" -eq 0 ]; then
+            gh issue create --title "$title" --body "La révision Calaméo a changé : \`$REVISION\`. Vérifier la liste à la source, récupérer le nouveau PDF et contrôler les données avant de les publier. Voir le README."
+          fi

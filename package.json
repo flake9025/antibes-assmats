@@ -1,0 +1,12 @@
+{
+  "name": "antibes-assmats",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "extract": "node scripts/extract.mjs",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "pdfjs-dist": "^6.5.438"
+  }
+}
